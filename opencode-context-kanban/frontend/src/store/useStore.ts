@@ -1,5 +1,9 @@
 import { create } from "zustand"
 
+let activeWebSocket: WebSocket | null = null
+let reconnectTimer: number | null = null
+let isConnecting = false
+
 export interface TokenCount {
   input: number
   output: number
@@ -28,11 +32,19 @@ export interface Session {
   messages: Record<string, Message>
 }
 
+export interface SseStatus {
+  connected: boolean
+  last_error: string | null
+  has_received_event: boolean
+  last_connection_time: number | null
+}
+
 export interface StoreState {
   sessions: Record<string, Session>
   activeSessionId: string | null
   timeline: any[]
   isConnected: boolean
+  sseStatus: SseStatus
   setActiveSession: (id: string) => void
   connect: () => void
 }
@@ -42,19 +54,49 @@ export const useStore = create<StoreState>((set, get) => ({
   activeSessionId: null,
   timeline: [],
   isConnected: false,
+  sseStatus: {
+    connected: false,
+    last_error: null,
+    has_received_event: false,
+    last_connection_time: null,
+  },
   setActiveSession: (id) => set({ activeSessionId: id }),
   connect: () => {
+    if (activeWebSocket && (activeWebSocket.readyState === WebSocket.OPEN || activeWebSocket.readyState === WebSocket.CONNECTING)) {
+      return
+    }
+
+    if (isConnecting) {
+      return
+    }
+
+    isConnecting = true
     const ws = new WebSocket("ws://localhost:8000/ws")
+    activeWebSocket = ws
 
     ws.onopen = () => {
+      isConnecting = false
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer)
+        reconnectTimer = null
+      }
       set({ isConnected: true })
       console.log("Connected to backend WS")
     }
 
     ws.onclose = () => {
+      if (activeWebSocket === ws) {
+        activeWebSocket = null
+      }
+      isConnecting = false
       set({ isConnected: false })
       console.log("Disconnected from backend WS, reconnecting...")
-      setTimeout(() => get().connect(), 3000)
+      if (reconnectTimer === null) {
+        reconnectTimer = window.setTimeout(() => {
+          reconnectTimer = null
+          get().connect()
+        }, 3000)
+      }
     }
 
     ws.onmessage = (event) => {
@@ -82,6 +124,7 @@ export const useStore = create<StoreState>((set, get) => ({
           sessions,
           timeline: data.timeline || [],
           activeSessionId: state.activeSessionId || Object.keys(sessions)[0] || null,
+          sseStatus: data.sse_status || state.sseStatus,
         }))
       } else if (msg.type === "event") {
         // Handle incremental events
@@ -117,11 +160,37 @@ export const useStore = create<StoreState>((set, get) => ({
               sessions[sid].messages[mid].parts = { ...sessions[sid].messages[mid].parts }
               sessions[sid].messages[mid].parts[pid] = props.part
             }
+          } else if (eventType === "message.removed") {
+            const sid = props.sessionID
+            const mid = props.messageID
+            if (sessions[sid]?.messages[mid]) {
+              sessions[sid] = {
+                ...sessions[sid],
+                messages: { ...sessions[sid].messages },
+              }
+              delete sessions[sid].messages[mid]
+            }
+          } else if (eventType === "message.part.removed") {
+            const sid = props.sessionID
+            const mid = props.messageID
+            const pid = props.partID
+            if (sessions[sid]?.messages[mid]?.parts?.[pid]) {
+              sessions[sid] = {
+                ...sessions[sid],
+                messages: { ...sessions[sid].messages },
+              }
+              sessions[sid].messages[mid] = {
+                ...sessions[sid].messages[mid],
+                parts: { ...sessions[sid].messages[mid].parts },
+              }
+              delete sessions[sid].messages[mid].parts[pid]
+            }
           }
-          // etc... handling removed
 
           return { sessions, timeline: newTimeline }
         })
+      } else if (msg.type === "sse_status") {
+        set({ sseStatus: msg.data })
       }
     }
   },

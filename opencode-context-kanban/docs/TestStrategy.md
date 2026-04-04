@@ -2,8 +2,10 @@
 
 这是一个严格的开发者调试工具，它必须具备在大量 Log 刷屏时保持 UI 稳定的能力。
 
+说明：本轮已经完成真实浏览器验证、mock 事件验证和部分接口连通性验证，但仍存在上游 `4096` 事件流不可达的环境阻塞项。
+
 ## 1. 核心测试维度
 
-- **全链路连通性测试 (Integration Test)**：确保 Python 后端能够稳定长连接 `opencode` 的 `/event` 数据流（SSE），且中途掉线后能够自动重连（Auto-reconnect）。
-- **状态一致性测试 (State Consistency)**：Python 维护的上下文内存树，必须与实际 `opencode` Agent 的状态（如 `Message`、`Session`、`Token` 等）在事件驱动下保持一致。
-- **UI 性能测试 (Performance)**：模拟短时间内大量（如10秒内）接收 `message.part.updated`（代表 Agent 疯狂输出大段代码或调用长输出工具），测试前端图表、Timeline 滚动条和 Diff 视图是否会卡顿掉帧或内存溢出（OOM）。
+- **全链路连通性测试 (Integration Test)** [部分完成]：后端 SSE 连接逻辑、前端断连提示与降级反馈已实现并验证；但真实上游 `4096` 事件流在本轮现场不可达，因此完整的在线链路仍待补测。
+- **状态一致性测试 (State Consistency)** [部分完成]：Python 维护的上下文内存树，必须与实际 `opencode` Agent 的状态（如 `Message`、`Session`、`Token` 等）在事件驱动下保持一致。（已修复 `message.removed` 的状态同步，后续可补充更多边缘情况测试）。
+- **UI 性能测试 (Performance)** [已完成]：模拟短时间内大量（如10秒内）接收 `message.part.updated`（代表 Agent 疯狂输出大段代码或调用长输出工具），测试前端图表、Timeline 滚动条和 Diff 视图是否会卡顿掉帧或内存溢出（OOM）。（图表警告与移动端视图已优化）。

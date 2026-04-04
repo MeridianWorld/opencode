@@ -65,6 +65,12 @@ class Store:
             str, Dict[str, Dict[str, Any]]
         ] = {}  # sessionID -> {messageID: {partID: part}}
         self.events_timeline: List[Any] = []
+        self.sse_status: Dict[str, Any] = {
+            "connected": False,
+            "last_error": None,
+            "has_received_event": False,
+            "last_connection_time": None,
+        }
 
     def handle_event(self, event_type: str, props: dict):
         # Record timeline
@@ -129,6 +135,22 @@ class Store:
             # Can trigger a special notification
             pass
 
+    def update_sse_status(self, connected: bool, error: str | None = None):
+        self.sse_status["connected"] = connected
+        self.sse_status["last_error"] = error
+        if connected:
+            self.sse_status["last_connection_time"] = asyncio.get_event_loop().time()
+        if not connected and error:
+            logger.info(f"SSE status updated: connected={connected}, error={error}")
+        # Broadcast status update to all connected clients
+        asyncio.create_task(manager.broadcast_sse_status())
+
+    def mark_event_received(self):
+        if not self.sse_status["has_received_event"]:
+            self.sse_status["has_received_event"] = True
+            # Broadcast status update when first event is received
+            asyncio.create_task(manager.broadcast_sse_status())
+
 
 store = Store()
 
@@ -149,6 +171,7 @@ class ConnectionManager:
                     "messages": store.messages,
                     "parts": store.parts,
                     "timeline": store.events_timeline[-100:],  # Last 100 events
+                    "sse_status": store.sse_status,
                 },
             }
         )
@@ -162,6 +185,14 @@ class ConnectionManager:
                 await connection.send_json(message)
             except Exception as e:
                 logger.error(f"Failed to send to websocket: {e}")
+
+    async def broadcast_sse_status(self):
+        await self.broadcast(
+            {
+                "type": "sse_status",
+                "data": store.sse_status,
+            }
+        )
 
 
 manager = ConnectionManager()
@@ -186,6 +217,8 @@ async def opencode_sse_client():
             try:
                 async with aconnect_sse(client, "GET", url) as event_source:
                     logger.info("Connected to opencode event stream")
+                    store.update_sse_status(connected=True)
+
                     async for sse in event_source.aiter_sse():
                         if sse.data:
                             try:
@@ -198,6 +231,7 @@ async def opencode_sse_client():
                                     continue
 
                                 logger.info(f"Received event: {event_type}")
+                                store.mark_event_received()
                                 store.handle_event(event_type, properties)
 
                                 # Broadcast to frontend
@@ -208,7 +242,11 @@ async def opencode_sse_client():
                             except json.JSONDecodeError:
                                 logger.error("Failed to parse SSE JSON data")
             except Exception as e:
-                logger.error(f"SSE connection failed: {e}. Retrying in 3 seconds...")
+                error_msg = str(e)
+                logger.error(
+                    f"SSE connection failed: {error_msg}. Retrying in 3 seconds..."
+                )
+                store.update_sse_status(connected=False, error=error_msg)
                 await asyncio.sleep(3)
 
 
