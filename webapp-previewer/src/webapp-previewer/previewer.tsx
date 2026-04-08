@@ -73,7 +73,7 @@ export function WebAppPreviewer() {
         </Show>
 
         <Show when={state().isOpen}>
-          <div style="position: fixed; top: 0; right: 0; bottom: 0; width: 32rem; z-index: 50; background-color: #0d0d0d; box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);">
+          <div style="position: fixed; top: 0; right: 0; bottom: 0; width: 32rem; height: 100vh; z-index: 50; background-color: #0d0d0d; box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);">
               <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; background-color: #141414; border-bottom: 1px solid #262626;">
                 <div style="display: flex; align-items: center; gap: 1rem;">
                   <span style="font-size: 0.75rem; font-weight: 500; color: #8c8c8c; text-transform: uppercase; letter-spacing: 0.05em;">
@@ -160,7 +160,7 @@ export function WebAppPreviewer() {
                 </div>
               </div>
 
-              <div style="flex: 1; display: flex; flex-direction: column; padding: 2rem; overflow: hidden; background: radial-gradient(#262626 1px, transparent 1px); background-size: 20px 20px;">
+              <div style="display: flex; flex-direction: column; height: 100%; overflow: hidden; background: radial-gradient(#262626 1px, transparent 1px); background-size: 20px 20px;">
                 <Show
                   when={state().previewUrl && preview.detectedFiles().length > 0}
                   fallback={
@@ -199,17 +199,19 @@ export function WebAppPreviewer() {
                     </div>
                   }
                 >
-                  <div style="flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                  <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0;">
                     <div
                       style={{
                         width: deviceDimensions().width,
                         transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        height: "100%",
+                        backgroundColor: "white",
+                        overflow: "hidden",
                       }}
-                      style="height: 100%; background-color: white; border-radius: 0.75rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;"
                     >
                       <iframe
                         src={state().previewUrl!}
-                        style="width: 100%; height: 100%; border: none;"
+                        style="width: 100%; height: 100%; border: none; display: block;"
                         title="Web App Preview"
                         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
                       />
