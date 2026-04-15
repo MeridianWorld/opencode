@@ -3,6 +3,7 @@ import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { useMutation } from "@tanstack/solid-query"
 import {
   batch,
+  For,
   onCleanup,
   Show,
   Match,
@@ -20,16 +21,16 @@ import { createResizeObserver } from "@solid-primitives/resize-observer"
 import { useLocal } from "@/context/local"
 import { selectionFromLines, useFile, type FileSelection, type SelectedLineRange } from "@/context/file"
 import { createStore } from "solid-js/store"
-import { ResizeHandle } from "@opencode-ai/ui/resize-handle"
 import { Select } from "@opencode-ai/ui/select"
-import { Tabs } from "@opencode-ai/ui/tabs"
 import { createAutoScroll } from "@opencode-ai/ui/hooks"
 import { previewSelectedLines } from "@opencode-ai/ui/pierre/selection-bridge"
 import { Button } from "@opencode-ai/ui/button"
 import { showToast } from "@opencode-ai/ui/toast"
 import { checksum } from "@opencode-ai/util/encode"
+import { getFilename } from "@opencode-ai/util/path"
 import { useSearchParams } from "@solidjs/router"
-import { NewSessionView, SessionHeader } from "@/components/session"
+import FileTree from "@/components/file-tree"
+import { NewSessionView } from "@/components/session"
 import { useComments } from "@/context/comments"
 import { getSessionPrefetch, SESSION_PREFETCH_TTL } from "@/context/global-sync/session-prefetch"
 import { useGlobalSync } from "@/context/global-sync"
@@ -45,17 +46,23 @@ import { createSessionComposerState, SessionComposerRegion } from "@/pages/sessi
 import {
   createOpenReviewFile,
   createSessionTabs,
-  createSizing,
   focusTerminalById,
   shouldFocusTerminalOnKeyDown,
 } from "@/pages/session/helpers"
+import { AtomsComposer } from "@/pages/session/atoms/atoms-composer"
+import { AtomsPreview } from "@/pages/session/atoms/atoms-preview"
+import { AtomsRail } from "@/pages/session/atoms/atoms-rail"
+import { AtomsShell } from "@/pages/session/atoms/atoms-shell"
+import { AtomsSide } from "@/pages/session/atoms/atoms-side"
+import { AtomsStage } from "@/pages/session/atoms/atoms-stage"
+import { createAtomsState } from "@/pages/session/atoms/state"
+import { AtomsTopbar } from "@/pages/session/atoms/atoms-topbar"
+import { FileTabContent } from "@/pages/session/file-tabs"
 import { MessageTimeline } from "@/pages/session/message-timeline"
 import { type DiffStyle, SessionReviewTab, type SessionReviewTabProps } from "@/pages/session/review-tab"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { syncSessionModel } from "@/pages/session/session-model-helpers"
-import { SessionSidePanel } from "@/pages/session/session-side-panel"
 import { TerminalPanel } from "@/pages/session/terminal-panel"
-import { WebAppPreviewer } from "@/webapp-previewer/previewer"
 import { useSessionCommands } from "@/pages/session/use-session-commands"
 import { useSessionHashScroll } from "@/pages/session/use-session-hash-scroll"
 import { Identifier } from "@/utils/id"
@@ -356,6 +363,7 @@ export default function Page() {
   })
 
   const composer = createSessionComposerState()
+  const atoms = createAtomsState()
 
   const workspaceKey = createMemo(() => params.dir ?? "")
   const workspaceTabs = createMemo(() => layout.tabs(workspaceKey))
@@ -397,16 +405,9 @@ export default function Page() {
   )
 
   const isDesktop = createMediaQuery("(min-width: 768px)")
-  const size = createSizing()
   const desktopReviewOpen = createMemo(() => isDesktop() && view().reviewPanel.opened())
   const desktopFileTreeOpen = createMemo(() => isDesktop() && layout.fileTree.opened())
-  const desktopSidePanelOpen = createMemo(() => desktopReviewOpen() || desktopFileTreeOpen())
-  const sessionPanelWidth = createMemo(() => {
-    if (!desktopSidePanelOpen()) return "100%"
-    if (desktopReviewOpen()) return `${layout.session.width()}px`
-    return `calc(100% - ${layout.fileTree.width()}px)`
-  })
-  const centered = createMemo(() => isDesktop() && !desktopReviewOpen())
+  const centered = createMemo(() => isDesktop() && atoms.view() !== "inspect")
 
   function normalizeTab(tab: string) {
     if (!tab.startsWith("file://")) return tab
@@ -521,7 +522,6 @@ export default function Page() {
 
   const [store, setStore] = createStore({
     messageId: undefined as string | undefined,
-    mobileTab: "session" as "session" | "changes",
     changes: "git" as ChangeMode,
     newSessionWorktree: "main",
     deferRender: false,
@@ -683,6 +683,37 @@ export default function Page() {
     if (store.changes === "branch") return vcs.ready.branch
     if (store.changes === "session") return !hasSessionReview() || diffsReady()
     return true
+  })
+  const diffFiles = createMemo(() => reviewDiffs().map((diff) => diff.file))
+  const kinds = createMemo(() => {
+    const merge = (a: "add" | "del" | "mix" | undefined, b: "add" | "del" | "mix") => {
+      if (!a) return b
+      if (a === b) return a
+      return "mix" as const
+    }
+
+    const normalize = (value: string) => value.replaceAll("\\", "/").replace(/\/+$/, "")
+    const out = new Map<string, "add" | "del" | "mix">()
+
+    for (const diff of reviewDiffs()) {
+      const file = normalize(diff.file)
+      const kind = diff.status === "added" ? "add" : diff.status === "deleted" ? "del" : "mix"
+      out.set(file, kind)
+
+      const parts = file.split("/")
+      for (const [idx] of parts.slice(0, -1).entries()) {
+        const dir = parts.slice(0, idx + 1).join("/")
+        if (!dir) continue
+        out.set(dir, merge(out.get(dir), kind))
+      }
+    }
+
+    return out
+  })
+  const nofiles = createMemo(() => {
+    const state = file.tree.state("")
+    if (!state?.loaded) return false
+    return file.tree.children("").length === 0
   })
 
   const newSessionWorktree = createMemo(() => {
@@ -1064,12 +1095,14 @@ export default function Page() {
     }
   }
 
-  const mobileChanges = createMemo(() => !isDesktop() && store.mobileTab === "changes")
-  const wantsReview = createMemo(() =>
-    isDesktop()
-      ? desktopFileTreeOpen() || (desktopReviewOpen() && activeTab() === "review")
-      : store.mobileTab === "changes",
-  )
+  const mobileChanges = createMemo(() => !isDesktop() && atoms.view() === "inspect")
+  const wantsReview = createMemo(() => {
+    const value = atoms.view()
+    if (value === "inspect") return true
+    if (value === "files") return true
+    if (value === "editor") return true
+    return false
+  })
 
   createEffect(() => {
     const list = changesOptions()
@@ -1102,6 +1135,30 @@ export default function Page() {
 
   const fileTreeTab = () => layout.fileTree.tab()
   const setFileTreeTab = (value: "changes" | "all") => layout.fileTree.setTab(value)
+
+  createEffect(
+    on(
+      () => atoms.view(),
+      (value) => {
+        if (value === "inspect") {
+          if (!view().reviewPanel.opened()) view().reviewPanel.open()
+          if (layout.fileTree.opened()) layout.fileTree.close()
+          return
+        }
+
+        if (view().reviewPanel.opened()) view().reviewPanel.close()
+
+        if (value === "files" || value === "editor") {
+          if (!layout.fileTree.opened()) layout.fileTree.open()
+          if (value === "files") layout.fileTree.setTab("all")
+          return
+        }
+
+        if (layout.fileTree.opened()) layout.fileTree.close()
+      },
+      { defer: true },
+    ),
+  )
 
   const [tree, setTree] = createStore({
     reviewScroll: undefined as HTMLDivElement | undefined,
@@ -1144,6 +1201,24 @@ export default function Page() {
     setActive: tabs().setActive,
     loadFile: file.load,
   })
+  const openFile = (path: string) => {
+    const tab = file.tab(path)
+    tabs().open(tab)
+    const task = file.load(path)
+    if (task instanceof Promise) {
+      void task.finally(() => {
+        tabs().setActive(tab)
+      })
+    } else {
+      tabs().setActive(tab)
+    }
+    atoms.setView("editor")
+  }
+  const openInspectFile = (path: string) => {
+    openReviewFile(path)
+    atoms.setView("editor")
+  }
+  const fileTabs = createMemo(() => openedTabs().filter((tab) => !!file.pathFromTab(tab)))
 
   const changesTitle = () => {
     if (!canReview()) {
@@ -1249,7 +1324,7 @@ export default function Page() {
         comments={comments.all()}
         focusedComment={comments.focus()}
         onFocusedCommentChange={comments.setFocus}
-        onViewFile={openReviewFile}
+        onViewFile={openInspectFile}
         classes={input.classes}
       />
     </Show>
@@ -1273,6 +1348,7 @@ export default function Page() {
       activeFileTab,
       (active) => {
         if (!active) return
+        atoms.setView("editor")
         if (fileTreeTab() !== "changes") return
         showAllFiles()
       },
@@ -1315,6 +1391,7 @@ export default function Page() {
   }
 
   const focusReviewDiff = (path: string) => {
+    atoms.setView("inspect")
     openReviewPanel()
     view().review.openPath(path)
     setTree({ activeDiff: path, pendingDiff: path })
@@ -1895,181 +1972,319 @@ export default function Page() {
     if (fillFrame !== undefined) cancelAnimationFrame(fillFrame)
   })
 
+  const projectName = createMemo(() => getFilename(sync.project?.worktree ?? sdk.directory))
+  const previewTargets = createMemo(() => diffs().filter((diff) => /\.(html?)$/i.test(diff.file)).length)
+  const railItems = createMemo(
+    () =>
+      [
+        { id: "preview", label: "Preview", note: "Inline app canvas" },
+        { id: "editor", label: "Editor", note: "Open generated files" },
+        { id: "files", label: "Files", note: "Browse the workspace tree" },
+        { id: "inspect", label: "Inspect", note: "Review diffs and changes" },
+      ] as const,
+  )
+  const sideTitle = createMemo(() => {
+    const value = atoms.view()
+    if (value === "preview") return "App Viewer"
+    if (value === "editor") return "Editor"
+    if (value === "files") return "Files"
+    return "Inspect"
+  })
+  const sideNote = createMemo(() => {
+    const value = atoms.view()
+    if (value === "preview") return `${previewTargets()} targets`
+    if (value === "editor") return `${fileTabs().length} open`
+    if (value === "files") return fileTreeTab() === "changes" ? "Changed files" : "Workspace tree"
+    return `${reviewCount()} changes`
+  })
+  const stageNote = createMemo(() => {
+    if (!params.id) return "New session"
+    return `${visibleUserMessages().length} turns`
+  })
+
   return (
     <div class="relative bg-background-base size-full overflow-hidden flex flex-col">
-      <SessionHeader />
-      <div class="flex-1 min-h-0 flex flex-col md:flex-row">
-        <Show when={!isDesktop() && !!params.id}>
-          <Tabs value={store.mobileTab} class="h-auto">
-            <Tabs.List>
-              <Tabs.Trigger
-                value="session"
-                class="!w-1/2 !max-w-none"
-                classes={{ button: "w-full" }}
-                onClick={() => setStore("mobileTab", "session")}
-              >
-                {language.t("session.tab.session")}
-              </Tabs.Trigger>
-              <Tabs.Trigger
-                value="changes"
-                class="!w-1/2 !max-w-none !border-r-0"
-                classes={{ button: "w-full" }}
-                onClick={() => setStore("mobileTab", "changes")}
-              >
-                {hasReview()
-                  ? language.t("session.review.filesChanged", { count: reviewCount() })
-                  : language.t("session.review.change.other")}
-              </Tabs.Trigger>
-            </Tabs.List>
-          </Tabs>
-        </Show>
+      <AtomsShell
+        stage={
+          <AtomsStage
+            eyebrow="Conversation"
+            title={projectName()}
+            note={
+              <div class="rounded-full border border-[var(--atoms-line)] bg-white px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
+                {stageNote()}
+              </div>
+            }
+          >
+            <div class="min-h-0 flex-1 overflow-hidden">
+              <Switch>
+                <Match when={params.id}>
+                  <Show
+                    when={messagesReady()}
+                    fallback={
+                      <div class="grid h-full place-items-center text-[14px] text-[var(--atoms-soft)]">Loading session...</div>
+                    }
+                  >
+                    <MessageTimeline
+                      mobileChanges={mobileChanges()}
+                      mobileFallback={reviewContent({
+                        diffStyle: "unified",
+                        classes: {
+                          root: "pb-8",
+                          header: "px-4",
+                          container: "px-4",
+                        },
+                        loadingClass: "px-4 py-4 text-text-weak",
+                        emptyClass: "h-full pb-64 -mt-4 flex flex-col items-center justify-center text-center gap-6",
+                      })}
+                      actions={actions}
+                      scroll={ui.scroll}
+                      onResumeScroll={resumeScroll}
+                      setScrollRef={setScrollRef}
+                      onScheduleScrollState={scheduleScrollState}
+                      onAutoScrollHandleScroll={autoScroll.handleScroll}
+                      onMarkScrollGesture={markScrollGesture}
+                      hasScrollGesture={hasScrollGesture}
+                      onUserScroll={markUserScroll}
+                      onTurnBackfillScroll={historyWindow.onScrollerScroll}
+                      onAutoScrollInteraction={autoScroll.handleInteraction}
+                      centered={centered()}
+                      setContentRef={(el) => {
+                        content = el
+                        autoScroll.contentRef(el)
 
-        {/* Session panel */}
-        <div
-          classList={{
-            "@container relative shrink-0 flex flex-col min-h-0 h-full bg-background-stronger flex-1 md:flex-none": true,
-            "transition-[width] duration-[240ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-[width] motion-reduce:transition-none":
-              !size.active() && !ui.reviewSnap,
-          }}
-          style={{
-            width: sessionPanelWidth(),
-          }}
-        >
-          <div class="flex-1 min-h-0 overflow-hidden">
-            <Switch>
-              <Match when={params.id}>
-                <Show when={messagesReady()}>
-                  <MessageTimeline
-                    mobileChanges={mobileChanges()}
-                    mobileFallback={reviewContent({
-                      diffStyle: "unified",
-                      classes: {
-                        root: "pb-8",
-                        header: "px-4",
-                        container: "px-4",
+                        const root = scroller
+                        if (root) scheduleScrollState(root)
+                      }}
+                      turnStart={historyWindow.turnStart()}
+                      historyMore={historyMore()}
+                      historyLoading={historyLoading()}
+                      onLoadEarlier={() => {
+                        void historyWindow.loadAndReveal()
+                      }}
+                      renderedUserMessages={historyWindow.renderedUserMessages()}
+                      anchor={anchor}
+                    />
+                  </Show>
+                </Match>
+                <Match when={true}>
+                  <NewSessionView worktree={newSessionWorktree()} />
+                </Match>
+              </Switch>
+            </div>
+          </AtomsStage>
+        }
+        composer={
+          <AtomsComposer hints={["Scaffold UI", "Open changed files", "Review latest diff"]}>
+            <SessionComposerRegion
+              state={composer}
+              ready={!store.deferRender && messagesReady()}
+              centered={centered()}
+              inputRef={(el) => {
+                inputRef = el
+              }}
+              newSessionWorktree={newSessionWorktree()}
+              onNewSessionWorktreeReset={() => setStore("newSessionWorktree", "main")}
+              onSubmit={() => {
+                comments.clear()
+                resumeScroll()
+              }}
+              onResponseSubmit={resumeScroll}
+              followup={
+                params.id
+                  ? {
+                      queue: queueEnabled,
+                      items: followupDock(),
+                      sending: sendingFollowup(),
+                      edit: editingFollowup(),
+                      onQueue: queueFollowup,
+                      onAbort: () => {
+                        const id = params.id
+                        if (!id) return
+                        setFollowup("paused", id, true)
                       },
-                      loadingClass: "px-4 py-4 text-text-weak",
-                      emptyClass: "h-full pb-64 -mt-4 flex flex-col items-center justify-center text-center gap-6",
-                    })}
-                    actions={actions}
-                    scroll={ui.scroll}
-                    onResumeScroll={resumeScroll}
-                    setScrollRef={setScrollRef}
-                    onScheduleScrollState={scheduleScrollState}
-                    onAutoScrollHandleScroll={autoScroll.handleScroll}
-                    onMarkScrollGesture={markScrollGesture}
-                    hasScrollGesture={hasScrollGesture}
-                    onUserScroll={markUserScroll}
-                    onTurnBackfillScroll={historyWindow.onScrollerScroll}
-                    onAutoScrollInteraction={autoScroll.handleInteraction}
-                    centered={centered()}
-                    setContentRef={(el) => {
-                      content = el
-                      autoScroll.contentRef(el)
-
-                      const root = scroller
-                      if (root) scheduleScrollState(root)
-                    }}
-                    turnStart={historyWindow.turnStart()}
-                    historyMore={historyMore()}
-                    historyLoading={historyLoading()}
-                    onLoadEarlier={() => {
-                      void historyWindow.loadAndReveal()
-                    }}
-                    renderedUserMessages={historyWindow.renderedUserMessages()}
-                    anchor={anchor}
-                  />
-                </Show>
+                      onSend: (id) => {
+                        void sendFollowup(params.id!, id, { manual: true })
+                      },
+                      onEdit: editFollowup,
+                      onEditLoaded: clearFollowupEdit,
+                    }
+                  : undefined
+              }
+              revert={
+                rolled().length > 0
+                  ? {
+                      items: rolled(),
+                      restoring: restoring(),
+                      disabled: reverting(),
+                      onRestore: restore,
+                    }
+                  : undefined
+              }
+              setPromptDockRef={(el) => {
+                promptDock = el
+              }}
+            />
+          </AtomsComposer>
+        }
+        rail={
+          <AtomsRail
+            title={projectName()}
+            subtitle={params.id ? "Live agent session" : "Draft workspace"}
+            active={atoms.view()}
+            items={railItems()}
+            onSelect={(id) => atoms.setView(id as "preview" | "editor" | "files" | "inspect")}
+          />
+        }
+        topbar={
+          <AtomsTopbar
+            title={sideTitle()}
+            subtitle={sideNote()}
+            active={atoms.view()}
+            items={railItems().map((item) => ({ id: item.id, label: item.label }))}
+            onSelect={(id) => atoms.setView(id as "preview" | "editor" | "files" | "inspect")}
+          />
+        }
+        side={
+          <AtomsSide
+            title={sideTitle()}
+            note={
+              <div class="rounded-full border border-[var(--atoms-line)] bg-white px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
+                {sideNote()}
+              </div>
+            }
+          >
+            <Switch>
+              <Match when={atoms.view() === "preview"}>
+                <AtomsPreview />
+              </Match>
+              <Match when={atoms.view() === "inspect"}>
+                {reviewPanel()}
               </Match>
               <Match when={true}>
-                <NewSessionView worktree={newSessionWorktree()} />
+                <div class="grid size-full min-h-0 min-w-0 grid-cols-1 xl:grid-cols-[17rem_minmax(0,1fr)]">
+                  <aside class="min-h-0 min-w-0 border-b border-[var(--atoms-line)] bg-[var(--atoms-panel)] xl:border-b-0 xl:border-r">
+                    <div class="border-b border-[var(--atoms-line)] px-4 py-3">
+                      <div class="flex items-center justify-between gap-3">
+                        <div class="text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--atoms-soft)]">
+                          File tree
+                        </div>
+                        <div class="flex items-center gap-2 rounded-full border border-[var(--atoms-line)] bg-white p-1">
+                          <button
+                            type="button"
+                            class="rounded-full px-3 py-1 text-[12px] font-medium transition"
+                            classList={{
+                              "bg-[var(--atoms-chip)] text-[var(--atoms-ink)]": fileTreeTab() === "changes",
+                              "text-[var(--atoms-soft)]": fileTreeTab() !== "changes",
+                            }}
+                            onClick={() => setFileTreeTab("changes")}
+                          >
+                            Changed
+                          </button>
+                          <button
+                            type="button"
+                            class="rounded-full px-3 py-1 text-[12px] font-medium transition"
+                            classList={{
+                              "bg-[var(--atoms-chip)] text-[var(--atoms-ink)]": fileTreeTab() === "all",
+                              "text-[var(--atoms-soft)]": fileTreeTab() !== "all",
+                            }}
+                            onClick={() => setFileTreeTab("all")}
+                          >
+                            All
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="min-h-0 overflow-auto px-3 py-3">
+                      <Switch>
+                        <Match when={fileTreeTab() === "changes" && !hasReview()}>
+                          <div class="rounded-[24px] border border-dashed border-[var(--atoms-line)] bg-white px-4 py-5 text-[13px] leading-6 text-[var(--atoms-soft)]">
+                            {reviewEmptyText()}
+                          </div>
+                        </Match>
+                        <Match when={fileTreeTab() === "all" && nofiles()}>
+                          <div class="rounded-[24px] border border-dashed border-[var(--atoms-line)] bg-white px-4 py-5 text-[13px] leading-6 text-[var(--atoms-soft)]">
+                            {language.t("session.files.empty")}
+                          </div>
+                        </Match>
+                        <Match when={fileTreeTab() === "changes"}>
+                          <FileTree
+                            path=""
+                            class="pt-2"
+                            allowed={diffFiles()}
+                            kinds={kinds()}
+                            draggable={false}
+                            active={file.pathFromTab(activeFileTab() ?? "")}
+                            onFileClick={(node) => openFile(node.path)}
+                          />
+                        </Match>
+                        <Match when={true}>
+                          <FileTree
+                            path=""
+                            class="pt-2"
+                            modified={diffFiles()}
+                            kinds={kinds()}
+                            active={file.pathFromTab(activeFileTab() ?? "")}
+                            onFileClick={(node) => openFile(node.path)}
+                          />
+                        </Match>
+                      </Switch>
+                    </div>
+                  </aside>
+
+                  <div class="min-h-0 min-w-0 flex flex-col bg-white">
+                    <div class="shrink-0 border-b border-[var(--atoms-line)] px-4 py-3">
+                      <Show
+                        when={fileTabs().length > 0}
+                        fallback={<div class="text-[13px] leading-6 text-[var(--atoms-soft)]">Select a file to inspect it in the editor.</div>}
+                      >
+                        <div class="flex flex-wrap items-center gap-2">
+                          <For each={fileTabs()}>
+                            {(tab) => {
+                              const path = () => file.pathFromTab(tab) ?? tab
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => tabs().setActive(tab)}
+                                  class="rounded-full border px-3 py-1.5 text-[13px] font-medium transition"
+                                  classList={{
+                                    "border-[var(--atoms-accent)] bg-[var(--atoms-chip)] text-[var(--atoms-ink)]":
+                                      activeFileTab() === tab,
+                                    "border-[var(--atoms-line)] bg-[var(--atoms-surface)] text-[var(--atoms-soft)] hover:text-[var(--atoms-ink)]":
+                                      activeFileTab() !== tab,
+                                  }}
+                                >
+                                  {getFilename(path())}
+                                </button>
+                              )
+                            }}
+                          </For>
+                        </div>
+                      </Show>
+                    </div>
+                    <div class="min-h-0 min-w-0 flex-1 overflow-hidden">
+                      <Show
+                        when={activeFileTab()}
+                        fallback={
+                          <div class="grid h-full min-h-[24rem] place-items-center bg-[linear-gradient(180deg,#fff_0%,#faf8f3_100%)] px-6 text-center">
+                            <div class="max-w-md">
+                              <div class="text-[26px] font-semibold text-[var(--atoms-ink)]">Editor ready</div>
+                              <div class="mt-3 text-[14px] leading-7 text-[var(--atoms-soft)]">
+                                Open a generated file from the tree or jump from the review view to land here.
+                              </div>
+                            </div>
+                          </div>
+                        }
+                      >
+                        {(tab) => <FileTabContent tab={tab()} />}
+                      </Show>
+                    </div>
+                  </div>
+                </div>
               </Match>
             </Switch>
-          </div>
-
-          <SessionComposerRegion
-            state={composer}
-            ready={!store.deferRender && messagesReady()}
-            centered={centered()}
-            inputRef={(el) => {
-              inputRef = el
-            }}
-            newSessionWorktree={newSessionWorktree()}
-            onNewSessionWorktreeReset={() => setStore("newSessionWorktree", "main")}
-            onSubmit={() => {
-              comments.clear()
-              resumeScroll()
-            }}
-            onResponseSubmit={resumeScroll}
-            followup={
-              params.id
-                ? {
-                    queue: queueEnabled,
-                    items: followupDock(),
-                    sending: sendingFollowup(),
-                    edit: editingFollowup(),
-                    onQueue: queueFollowup,
-                    onAbort: () => {
-                      const id = params.id
-                      if (!id) return
-                      setFollowup("paused", id, true)
-                    },
-                    onSend: (id) => {
-                      void sendFollowup(params.id!, id, { manual: true })
-                    },
-                    onEdit: editFollowup,
-                    onEditLoaded: clearFollowupEdit,
-                  }
-                : undefined
-            }
-            revert={
-              rolled().length > 0
-                ? {
-                    items: rolled(),
-                    restoring: restoring(),
-                    disabled: reverting(),
-                    onRestore: restore,
-                  }
-                : undefined
-            }
-            setPromptDockRef={(el) => {
-              promptDock = el
-            }}
-          />
-
-          <Show when={desktopReviewOpen()}>
-            <div onPointerDown={() => size.start()}>
-              <ResizeHandle
-                direction="horizontal"
-                size={layout.session.width()}
-                min={450}
-                max={typeof window === "undefined" ? 1000 : window.innerWidth * 0.45}
-                onResize={(width) => {
-                  size.touch()
-                  layout.session.resize(width)
-                }}
-              />
-            </div>
-          </Show>
-        </div>
-
-        <SessionSidePanel
-          canReview={canReview}
-          diffs={reviewDiffs}
-          diffsReady={reviewReady}
-          empty={reviewEmptyText}
-          hasReview={hasReview}
-          reviewCount={reviewCount}
-          reviewPanel={reviewPanel}
-          activeDiff={tree.activeDiff}
-          focusReviewDiff={focusReviewDiff}
-          reviewSnap={ui.reviewSnap}
-          size={size}
-        />
-        
-        <WebAppPreviewer />
-      </div>
-
+          </AtomsSide>
+        }
+      />
       <TerminalPanel />
     </div>
   )

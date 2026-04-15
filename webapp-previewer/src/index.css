@@ -22,6 +22,19 @@ html, body, #root {
   -moz-osx-font-smoothing: grayscale;
 }
 
+:root {
+  --atoms-page: #f4f1ea;
+  --atoms-chat: #f6f3ed;
+  --atoms-surface: #fbfaf7;
+  --atoms-panel: #f2ede4;
+  --atoms-rail: #223e67;
+  --atoms-ink: #13233d;
+  --atoms-soft: #5c6980;
+  --atoms-line: rgba(19, 35, 61, 0.12);
+  --atoms-accent: #3f6ef5;
+  --atoms-chip: rgba(63, 110, 245, 0.12);
+}
+
 /* Remove default button styles */
 button {
   font-family: inherit;

@@ -462,3 +462,58 @@
 
 - 如果不先修复 e2e 与 typecheck，后续每一轮实现都会失去可验证性
 - 用户原始需求就是“先修复问题，再完成完整任务”，这些基础问题正属于必须先清掉的阻塞
+### 2026-04-15 Record 13
+Additional validation added after the first atoms-shell pass:
+- Added `e2e/app/atoms-preview.spec.ts`
+- Tightened the preview assertion to scope inside `data-component="atoms-preview"` after finding a duplicate `Files` button in the wider page shell
+
+Why this mattered:
+- The failure was in the locator, not in the implementation
+- Keeping the selector scoped avoids false negatives while still proving the preview workspace is rendered
+
+### 2026-04-15 Record 11
+User instruction continued:
+- Keep working inside `webapp-previewer`
+- Continue implementing instead of stopping at the first bootstrap fix
+- Keep writing each new understanding and decision into this document
+
+My understanding:
+- Restoring the official app shell was only phase one
+- The next milestone is replacing the old session composition with an atoms-style workspace shell
+- The shell must preserve official session behavior instead of forking business logic
+
+Implementation choices made in this step:
+- Commit phase one separately first: `feat: restore official webapp shell bootstrap` (`16644067a`)
+- Add a local red/green test for atoms state before creating new state
+- Add a layout-level red/green e2e before swapping the session page shell
+- Recompose the right workspace instead of directly embedding the old `SessionSidePanel`
+
+Why this choice:
+- The old side panel computes width from the previous two-column layout and does not fit a new atoms-style three-column shell cleanly
+- A lighter recomposition lets us keep official file and review primitives while changing the presentation layer
+
+### 2026-04-15 Record 12
+What was implemented:
+- Added `src/pages/session/atoms/state.ts`
+- Added `src/pages/session/atoms/state.test.ts`
+- Added atoms shell components under `src/pages/session/atoms/`
+- Replaced the live session-page layout tree in `src/pages/session.tsx` with:
+  - conversation stage
+  - atoms rail
+  - atoms topbar
+  - atoms side workspace
+  - atoms composer wrapper
+- Added inline preview workspace component backed by the existing preview hook
+- Added `e2e/app/atoms-layout.spec.ts`
+- Added atoms theme variables to `src/index.css`
+
+Validation completed in this step:
+- `bun test --preload ./happydom.ts ./src/pages/session/atoms/state.test.ts`
+- `bun typecheck`
+- `bunx playwright test e2e/app/atoms-layout.spec.ts --reporter=line`
+
+Current status after this step:
+- Official shell bootstrap is in place and committed
+- Atoms-style session shell now renders around the routed session
+- The session still uses official prompt, timeline, review, and file behavior internally
+- The global opencode chrome is still present around the session route, so matching the full atoms.dev site frame is still a remaining task
