@@ -46,11 +46,15 @@
 
 ### 当前实际入口
 
-- `webapp-previewer/src/entry.tsx` 当前直接渲染 `webapp-previewer/src/app.tsx`
-- 当前 `webapp-previewer/src/app.tsx` 是一个自定义双栏 demo：
-  - 左边 `ChatPanel`
-  - 右边 `RightPanel`
-  - 这条链路并不是官方 Web 前端的完整启动结构
+- 当前最新状态：
+  - `webapp-previewer/src/entry.tsx` 已切换为官方 web 入口结构
+  - `webapp-previewer/src/app.tsx` 已切换为官方 app shell/provider/router 结构
+  - live 入口不再直接使用 `ChatPanel + RightPanel` 这套 demo 骨架
+
+补充说明：
+
+- 在开始实现前，这里确实还是一个自定义双栏 demo
+- 当前这一步已经完成“入口切回官方链路”的首轮落地
 
 ### 已经存在、可以复用的官方风格基础设施
 
@@ -303,6 +307,32 @@
 - 再在 session 页面里完成 atoms 风格工作台重组
 - 最后把右侧上下文面板与 preview/editor/files/inspect 接上
 
+## 最新实现进展
+
+### 已完成
+
+- `webapp-previewer/src/entry.tsx` 已替换为官方 web 入口结构
+- `webapp-previewer/src/app.tsx` 已替换为官方 app/provider/router 结构
+- 新增 e2e：
+  - `webapp-previewer/e2e/app/atoms-bootstrap.spec.ts`
+- 这条 bootstrap e2e 已通过，用来证明当前页面不再落回旧 demo 根页
+- `bun typecheck` 已在 `webapp-previewer` 下恢复通过
+
+### 实现阶段中暴露并修复的基础问题
+
+- `webapp-previewer/e2e/fixtures.ts` 里引用 `llm-server` 的相对路径写错，缺少 `packages/` 这一层
+- `webapp-previewer/e2e/backend.ts` 里定位仓库根目录时多退了一层，导致 `cwd` 指向不存在的目录
+- 同一个 `backend.ts` 在 Windows 下还需要显式通过 shell 调起 `bun run ...`
+- `webapp-previewer/src/custom-elements.d.ts` 处于损坏状态
+- `webapp-previewer/src/types.d.ts` 存在无效声明语法
+- `webapp-previewer/src/webapp-previewer/use-webapp-preview.ts` 依赖了当前 `useSDK()` 中并不存在的属性，已改成只依赖现有 `sync` 数据
+
+### 当前判断
+
+- 第一阶段“恢复官方 app shell”已经落地
+- 下一阶段可以继续推进 atoms 风格 session 工作台拆分
+- 现有 previewer 仍是旧实验 UI，但已经不再阻塞编译与入口验证
+
 ## 对话更新记录
 
 ### 2026-04-15 第 1 次记录
@@ -407,3 +437,28 @@
 
 - 任务已经跨越入口、路由、session、preview、测试多个子系统
 - 先写清楚文件边界、测试路径和提交节奏，能避免后续实现跑偏
+
+### 2026-04-15 第 9 次记录
+
+进入实现后，我先按 TDD 补了 `atoms-bootstrap` 这条 e2e，用来锁定：
+
+- 页面必须通过官方 app shell 打开
+- 页面必须落在官方 session 路由，而不是旧 demo 根页
+
+在这一步暴露出的理解：
+
+- 当前失败不只是“入口还是旧 demo”
+- `webapp-previewer` 现有 e2e 基础设施本身也有路径和 Windows 进程启动问题
+
+### 2026-04-15 第 10 次记录
+
+我在实现阶段做出的新增选择：
+
+- 先修复 e2e 基础设施，再继续验证入口切换
+- 先把 `src/app.tsx / src/entry.tsx` 切回官方结构，再继续 atoms 页面拆分
+- 顺手修复阻塞 `bun typecheck` 的损坏声明文件和 previewer 类型错误
+
+选择理由：
+
+- 如果不先修复 e2e 与 typecheck，后续每一轮实现都会失去可验证性
+- 用户原始需求就是“先修复问题，再完成完整任务”，这些基础问题正属于必须先清掉的阻塞

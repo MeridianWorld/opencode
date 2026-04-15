@@ -53,6 +53,11 @@ async function waitExit(proc: ReturnType<typeof spawn>, timeout = 10_000) {
 }
 
 const LOG_CAP = 100
+const bin = process.platform === "win32" ? process.env.ComSpec || "C:\\Windows\\System32\\cmd.exe" : "bun"
+const args = (port: number) =>
+  process.platform === "win32"
+    ? ["/c", "bun", "run", "--conditions=browser", "./src/index.ts", "serve", "--port", String(port), "--hostname", "127.0.0.1"]
+    : ["run", "--conditions=browser", "./src/index.ts", "serve", "--port", String(port), "--hostname", "127.0.0.1"]
 
 function cap(input: string[]) {
   if (input.length > LOG_CAP) input.splice(0, input.length - LOG_CAP)
@@ -66,7 +71,7 @@ export async function startBackend(label: string, input?: { llmUrl?: string }): 
   const port = await freePort()
   const sandbox = await fs.mkdtemp(path.join(os.tmpdir(), `opencode-e2e-${label}-`))
   const appDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
-  const repoDir = path.resolve(appDir, "../..")
+  const repoDir = path.resolve(appDir, "..")
   const opencodeDir = path.join(repoDir, "packages", "opencode")
   const env = {
     ...process.env,
@@ -84,15 +89,12 @@ export async function startBackend(label: string, input?: { llmUrl?: string }): 
   } satisfies Record<string, string | undefined>
   const out: string[] = []
   const err: string[] = []
-  const proc = spawn(
-    "bun",
-    ["run", "--conditions=browser", "./src/index.ts", "serve", "--port", String(port), "--hostname", "127.0.0.1"],
-    {
-      cwd: opencodeDir,
-      env,
-      stdio: ["ignore", "pipe", "pipe"],
-    },
-  )
+  const proc = spawn(bin, args(port), {
+    cwd: opencodeDir,
+    env,
+    stdio: ["ignore", "pipe", "pipe"],
+  })
+  let procError: string | undefined
   proc.stdout?.on("data", (chunk) => {
     out.push(String(chunk))
     cap(out)
@@ -101,9 +103,36 @@ export async function startBackend(label: string, input?: { llmUrl?: string }): 
     err.push(String(chunk))
     cap(err)
   })
+  proc.once("error", (error) => {
+    procError = error instanceof Error ? error.message : String(error)
+  })
 
   const url = `http://127.0.0.1:${port}`
   try {
+    const end = Date.now() + 120_000
+    while (Date.now() < end) {
+      if (proc.exitCode !== null) {
+        throw new Error(
+          [`backend exited before health check`, `exit code: ${proc.exitCode}`, procError, tail(out), tail(err)]
+            .filter(Boolean)
+            .join("\n"),
+        )
+      }
+      try {
+        const res = await fetch(`${url}/global/health`)
+        if (res.ok) break
+      } catch (error) {
+        procError = procError ?? (error instanceof Error ? error.message : String(error))
+      }
+      await new Promise((resolve) => setTimeout(resolve, 250))
+    }
+    if (proc.exitCode !== null) {
+      throw new Error(
+        [`backend exited before health check`, `exit code: ${proc.exitCode}`, procError, tail(out), tail(err)]
+          .filter(Boolean)
+          .join("\n"),
+      )
+    }
     await waitForHealth(url)
   } catch (error) {
     proc.kill("SIGTERM")

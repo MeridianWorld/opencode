@@ -6,7 +6,6 @@
 
 import { Show, For, createMemo, createEffect, onCleanup } from "solid-js"
 import { Portal } from "solid-js/web"
-import { IconButton } from "@opencode-ai/ui/icon-button"
 import { useWebAppPreview } from "./use-webapp-preview"
 import type { DeviceMode } from "./types"
 
@@ -146,17 +145,15 @@ export function WebAppPreviewer() {
                     </svg>
                   </a>
 
-                  <IconButton
+                  <button
                     onClick={() => preview.closePreview()}
-                    variant="ghost"
-                    size="sm"
                     style="color: #8c8c8c;"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <line x1="18" y1="6" x2="6" y2="18"></line>
                       <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
-                  </IconButton>
+                  </button>
                 </div>
               </div>
 
