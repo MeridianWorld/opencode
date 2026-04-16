@@ -1081,3 +1081,39 @@ Self-review completed for this approved spec:
   - the work is constrained to the session page only, which is large but still a coherent implementation target
 - Ambiguity check:
   - the previously ambiguous question of whether to preserve OpenCode visuals has been resolved explicitly: preserve behavior and plumbing, not visible stock UI
+
+### 2026-04-16 Record 23
+New user confirmation:
+- The user approved the redesign document as written and asked to continue
+
+My understanding:
+- The work is no longer blocked on product-direction clarification
+- The correct next step is implementation planning, not more visual debate
+- The planning artifacts still need to stay inside `webapp-previewer` and be committed to git, matching the user's standing documentation rule
+
+Planning work completed in this step:
+- Created the implementation plan at:
+  - `D:\github_repo\opencode\webapp-previewer\docs\superpowers\plans\2026-04-16-atoms-session-page.md`
+- The plan converts the approved redesign into six executable task groups:
+  - atoms state expansion
+  - atoms page shell
+  - atoms chat workspace
+  - single workbench
+  - closable editor tabs
+  - preview / inspect reintegration and regressions
+
+Error discovered while creating the plan:
+- A single oversized `apply_patch` attempt failed on Windows with:
+  - `Io(Os { code: 206, kind: InvalidFilename, message: "文件名或扩展名太长。" })`
+
+Handling choice made:
+- Do not retry the same giant patch
+- Write the plan document in smaller `apply_patch` chunks instead
+
+Why this choice:
+- The failure was a tooling/write-size constraint, not a problem with the target file path or the plan content itself
+- Chunked writes preserve the user's requirement that all new understanding, errors, and handling decisions be recorded rather than silently skipped
+
+Outcome:
+- The implementation plan now exists on disk under `webapp-previewer/docs/superpowers/plans`
+- The project is ready to move from planning into execution
