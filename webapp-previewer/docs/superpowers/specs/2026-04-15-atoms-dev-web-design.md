@@ -584,3 +584,73 @@ Why this choice:
 Validation completed in this step:
 - `bun typecheck`
 - `bunx playwright test e2e/app/atoms-layout.spec.ts e2e/app/atoms-preview.spec.ts e2e/app/atoms-workspace-tabs.spec.ts --reporter=line`
+
+### 2026-04-16 Record 17
+New user-reported error:
+- Clicking `Editor` or `Files` could crash the page with:
+  - `Error: [kobalte]: useTabsContext must be used within a Tabs component`
+- The user also asked that every later error discovery, understanding, and handling step be appended to this document as part of the working log
+
+My understanding after root-cause inspection:
+- The earlier atoms workspace tab regression only covered the empty editor state, so it did not open a real file tab and therefore missed the failing path
+- The actual crash happens only after the atoms workspace has an active file tab
+- `src/pages/session/file-tabs.tsx` exports `FileTabContent`, and that component returns `Tabs.Content`
+- In the official `session-side-panel` implementation, `FileTabContent` is always rendered inside a real `Tabs` root
+- In the atoms workspace implementation inside `src/pages/session.tsx`, I had been rendering `FileTabContent` directly in the editor pane without a surrounding `Tabs` provider
+- That mismatch is the direct cause of the Kobalte context error
+
+Choices made in this step:
+- Tighten `e2e/app/atoms-workspace-tabs.spec.ts` so it:
+  - opens the `Files` workspace
+  - switches the tree to `All`
+  - opens the seeded `README.md` file from the workspace tree
+  - then switches across atoms workspace views while asserting the shell stays healthy
+- Use that stronger test to verify a real red state before changing production code
+- Fix the editor pane with the smallest structural change:
+  - wrap the atoms editor content area in `@opencode-ai/ui/tabs`
+  - keep an `empty` content state for the no-file case
+  - render each `FileTabContent` under that `Tabs` root so the official file viewer keeps the context it expects
+- Keep the custom atoms file-chip buttons as the visible tab controls, instead of rewriting the whole editor pane to the full official side-panel layout
+
+Why this choice:
+- It preserves the official opencode file-view implementation instead of forking it
+- It fixes the exact root cause instead of masking the crash with conditional rendering or error swallowing
+- It matches the product direction already agreed in this project: atoms-style presentation outside, official session/file behavior inside
+
+Validation completed in this step:
+- Red verification first:
+  - `bunx playwright test e2e/app/atoms-workspace-tabs.spec.ts --reporter=json`
+  - confirmed the failing route and captured the same `useTabsContext` error in the test output
+- Green verification after the fix:
+  - `bunx playwright test e2e/app/atoms-workspace-tabs.spec.ts --reporter=json`
+
+### 2026-04-16 Record 18
+New user instruction:
+- `D:\github_repo\opencode\test-html` is a real web project that can be used to validate whether `webapp-previewer` features behave correctly
+
+Additional verification finding:
+- Running the three atoms Playwright specs together with the default worker count produced a separate test-harness failure
+- All three failures stopped in `waitSession()` before entering the atoms workspace checks, which means that run was not evidence of a regression in the tabs fix itself
+- Re-running the same atoms suite serially succeeded end-to-end
+
+My understanding:
+- `test-html` should become the stable feature-validation sample project for preview, file tree, editor, and inspect flows, because it is more realistic than the minimal temp workspace used by the current draft-session tests
+- The current atoms tab fix is functionally sound based on the red-to-green targeted regression and the serial suite pass
+- The parallel Playwright timeout is a separate reliability issue in the e2e harness or local startup flow and should be tracked independently from the UI bug
+
+Choices made in this step:
+- Record `test-html` as the preferred local sample app for future validation work
+- Keep the current functional verification focused on:
+  - `bun typecheck`
+  - the atoms Playwright subset
+- Treat the parallel `waitSession()` timeout as an environment/test-orchestration issue, not as proof that the tabs fix regressed the atoms shell
+- Re-run the atoms suite serially with `--workers=1` to verify the actual product behavior deterministically
+
+Why this choice:
+- It separates product debugging from harness debugging, which keeps later troubleshooting much clearer
+- It gives the project a concrete, reusable sample workspace for future preview/editor/files validation
+- It still verifies the current bug fix thoroughly without expanding scope into unrelated e2e infrastructure work
+
+Validation completed in this step:
+- `bun typecheck`
+- `bunx playwright test e2e/app/atoms-layout.spec.ts e2e/app/atoms-preview.spec.ts e2e/app/atoms-workspace-tabs.spec.ts --workers=1 --reporter=json`

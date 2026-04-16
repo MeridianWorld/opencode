@@ -9,22 +9,36 @@ test("switches workspace tabs on the draft session screen without breaking the s
   const side = page.locator('[data-component="atoms-side"]')
   const rail = page.locator('[data-component="atoms-rail"]')
   const title = (value: string) => side.getByText(new RegExp(`^${value}$`)).first()
+  const errs: string[] = []
+  const onerr = (err: Error) => errs.push(err.message)
+
+  page.on("pageerror", onerr)
 
   await expect(topbar).toBeVisible()
   await expect(title("App Viewer")).toBeVisible()
 
-  await rail.getByRole("button", { name: /Editor/i }).click()
-  await expect(title("Editor")).toBeVisible()
-  await expect(side.getByText(/Select a file to inspect it in the editor/i)).toBeVisible()
-
   await topbar.getByRole("button", { name: /^Files$/ }).click()
   await expect(title("Files")).toBeVisible()
   await expect(side.getByText(/Workspace tree|Changed files/i)).toBeVisible()
+  await side.getByRole("button", { name: /^All$/ }).click()
+  await side.locator('[data-component="filetree"]').getByRole("button", { name: /README\.md/i }).first().click()
+
+  await expect(title("Editor")).toBeVisible()
+  await expect(side.getByRole("button", { name: /README\.md/i }).first()).toBeVisible()
+
+  await rail.getByRole("button", { name: /Editor/i }).click()
+  await expect(title("Editor")).toBeVisible()
 
   await topbar.getByRole("button", { name: /^Inspect$/ }).click()
   await expect(title("Inspect")).toBeVisible()
 
+  await topbar.getByRole("button", { name: /^Files$/ }).click()
+  await expect(title("Files")).toBeVisible()
+
   await rail.getByRole("button", { name: /Preview/i }).click()
   await expect(title("App Viewer")).toBeVisible()
   await expect(page.locator('[data-component="atoms-preview"]')).toBeVisible()
+
+  page.off("pageerror", onerr)
+  expect(errs).toEqual([])
 })

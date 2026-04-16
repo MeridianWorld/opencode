@@ -22,6 +22,7 @@ import { useLocal } from "@/context/local"
 import { selectionFromLines, useFile, type FileSelection, type SelectedLineRange } from "@/context/file"
 import { createStore } from "solid-js/store"
 import { Select } from "@opencode-ai/ui/select"
+import { Tabs } from "@opencode-ai/ui/tabs"
 import { createAutoScroll } from "@opencode-ai/ui/hooks"
 import { previewSelectedLines } from "@opencode-ai/ui/pierre/selection-bridge"
 import { Button } from "@opencode-ai/ui/button"
@@ -2225,29 +2226,33 @@ export default function Page() {
                         </div>
                       </Show>
                     </div>
-                    <div class="min-h-0 min-w-0 flex-1 overflow-hidden">
-                      <Show
-                        when={activeFileTab()}
-                        fallback={
-                          <div
-                            class="grid h-full min-h-[24rem] place-items-center px-6 text-center"
-                            style={{
-                              background:
-                                "var(--atoms-shell-glow), linear-gradient(180deg, color-mix(in srgb, var(--atoms-card) 92%, transparent), var(--atoms-surface))",
-                            }}
-                          >
-                            <div class="max-w-md">
-                              <div class="text-[26px] font-semibold text-[var(--atoms-ink)]">Editor ready</div>
-                              <div class="mt-3 text-[14px] leading-7 text-[var(--atoms-soft)]">
-                                Open a generated file from the tree or jump from the review view to land here.
-                              </div>
+                    <Tabs
+                      value={activeFileTab() ?? "empty"}
+                      onChange={(tab) => {
+                        if (tab === "empty") return
+                        tabs().setActive(tab)
+                      }}
+                      class="min-h-0 min-w-0 flex-1 overflow-hidden"
+                    >
+                      <Tabs.Content value="empty" class="mt-3 h-full">
+                        <div
+                          class="grid h-full min-h-[24rem] place-items-center px-6 text-center"
+                          style={{
+                            background:
+                              "var(--atoms-shell-glow), linear-gradient(180deg, color-mix(in srgb, var(--atoms-card) 92%, transparent), var(--atoms-surface))",
+                          }}
+                        >
+                          <div class="max-w-md">
+                            <div class="text-[26px] font-semibold text-[var(--atoms-ink)]">Editor ready</div>
+                            <div class="mt-3 text-[14px] leading-7 text-[var(--atoms-soft)]">
+                              Open a generated file from the tree or jump from the review view to land here.
                             </div>
                           </div>
-                        }
-                      >
-                        {(tab) => <FileTabContent tab={tab()} />}
-                      </Show>
-                    </div>
+                        </div>
+                      </Tabs.Content>
+
+                      <For each={fileTabs()}>{(tab) => <FileTabContent tab={tab} />}</For>
+                    </Tabs>
                   </div>
                 </div>
               </Match>
