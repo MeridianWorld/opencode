@@ -14,6 +14,22 @@ const DEFAULT_STATE: WebAppPreviewState = {
 const WEB_APP_EXTENSIONS = [".html", ".htm"]
 
 const isAbsolute = (value: string) => /^[A-Za-z]:[\\/]/.test(value)
+const slash = (value: string) => value.replace(/\\/g, "/")
+const trim = (value: string) => slash(value).replace(/\/+$/, "")
+const lead = (value: string) => slash(value).replace(/^\/+/, "")
+
+export function locate(dir: string, value: string) {
+  const root = trim(dir)
+  const path = isAbsolute(value) ? slash(value) : `${root}/${lead(value)}`
+  return {
+    path,
+    relative: path.startsWith(`${root}/`) ? path.slice(root.length + 1) : path,
+  }
+}
+
+export function href(base: string, dir: string, file: string) {
+  return `${base.replace(/\/$/, "")}/view/${locate(dir, file).relative}?directory=${encodeURIComponent(dir)}`
+}
 
 export function useWebAppPreview(initialConfig?: Partial<WebAppPreviewConfig>) {
   const sync = useSync()
@@ -52,13 +68,13 @@ export function useWebAppPreview(initialConfig?: Partial<WebAppPreviewConfig>) {
     const seen = new Set<string>()
     const files: DetectedFile[] = []
     const add = (value: string, active: boolean) => {
-      const path = isAbsolute(value) || value.startsWith(directory) ? value : `${directory}/${value}`.replace(/\\/g, "/")
-      if (!isWebAppFile(path) || seen.has(path)) return
-      seen.add(path)
+      const next = locate(directory, value)
+      if (!isWebAppFile(next.path) || seen.has(next.path)) return
+      seen.add(next.path)
       files.push({
-        path,
-        relativePath: path.startsWith(`${directory}/`) ? path.slice(directory.length + 1) : path,
-        name: path.split("/").pop() || path,
+        path: next.path,
+        relativePath: next.relative,
+        name: next.path.split("/").pop() || next.path,
         type: "html",
         lastModified: Date.now(),
         isActive: active,
@@ -87,8 +103,7 @@ export function useWebAppPreview(initialConfig?: Partial<WebAppPreviewConfig>) {
 
   const generatePreviewUrl = (filePath: string) => {
     const directory = sync.directory || config().projectDirectory
-    const relativePath = filePath.startsWith(`${directory}/`) ? filePath.slice(directory.length + 1) : filePath
-    return `${config().backendUrl.replace(/\/$/, "")}/view/${relativePath}?directory=${encodeURIComponent(directory)}`
+    return href(config().backendUrl, directory, filePath)
   }
 
   const injectBaseTag = async (htmlUrl: string, directory: string) => {

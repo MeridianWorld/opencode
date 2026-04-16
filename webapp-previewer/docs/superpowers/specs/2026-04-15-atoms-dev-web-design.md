@@ -654,3 +654,44 @@ Why this choice:
 Validation completed in this step:
 - `bun typecheck`
 - `bunx playwright test e2e/app/atoms-layout.spec.ts e2e/app/atoms-preview.spec.ts e2e/app/atoms-workspace-tabs.spec.ts --workers=1 --reporter=json`
+
+### 2026-04-16 Record 19
+New user-reported error:
+- In the atoms `Preview` view, clicking an HTML target still did nothing
+- The preview canvas stayed empty and the web interface never appeared
+
+My understanding after root-cause inspection:
+- The atoms preview surface is driven entirely by `src/webapp-previewer/use-webapp-preview.ts`
+- The failing path is:
+  - detect HTML targets
+  - generate `/view/...` URL
+  - verify/load preview
+  - assign `previewUrl` to the iframe
+- On Windows, the hook was mixing:
+  - workspace directories in backslash form like `D:\github_repo\opencode\test-html`
+  - preview file paths in slash form like `D:/github_repo/opencode/test-html/index.html`
+- Because of that mismatch, `generatePreviewUrl()` failed to recognize that the file was inside the current workspace and used the absolute path as the `/view/...` segment
+- That produced a broken URL shape like `/view/D:/.../index.html?...` instead of `/view/index.html?...`
+- The result was that selecting a detected HTML file could fail before a usable `previewUrl` was ever committed to state, which matched the user's visible symptom of "clicking has no effect"
+
+Choices made in this step:
+- Add a direct regression around the path logic in `src/webapp-previewer/use-webapp-preview.test.ts`
+- Extract small pure helpers in `use-webapp-preview.ts` so the preview path behavior can be tested without mounting the whole app:
+  - `locate(dir, value)`
+  - `href(base, dir, file)`
+- Make both HTML target detection and preview URL generation use the same normalized slash-based path logic
+- Upgrade `e2e/app/atoms-preview.spec.ts` toward a real HTML-preview flow using a temporary project with `index.html`
+
+Why this choice:
+- The bug was caused by inconsistent path normalization, so the most reliable fix is to centralize the path derivation instead of patching only one call site
+- The pure helper test gives a stable regression guard for the exact Windows path case the user hit
+- Keeping the atoms preview UI on top of the existing backend `/view` route still aligns with the project goal of reusing official backend behavior rather than inventing a separate preview service
+
+Validation completed in this step:
+- Passed:
+  - `bun test --preload ./happydom.ts ./src/webapp-previewer/use-webapp-preview.test.ts`
+  - direct helper output now resolves to `http://localhost:4096/view/index.html?directory=...`
+  - direct backend check for `test-html/index.html` via `/view/index.html?...` returned HTTP `200`
+- Not fully verifiable locally because of environment limitations:
+  - `bunx playwright test e2e/app/atoms-preview.spec.ts --workers=1 --reporter=json` could not complete because the isolated Bun backend crashed on this Windows machine with a Bun stack overflow during startup
+  - `bun typecheck` could not complete because `tsgo -b` ran out of memory on this Windows machine
