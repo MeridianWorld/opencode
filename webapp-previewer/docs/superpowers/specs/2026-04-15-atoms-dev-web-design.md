@@ -805,3 +805,44 @@ Validation completed in this step:
   - `bun test --preload ./happydom.ts ./src/webapp-previewer/use-webapp-preview.test.ts`
   - `bun typecheck`
   - `bunx playwright test e2e/app/atoms-layout.spec.ts --workers=1 --reporter=line`
+
+### 2026-04-16 Record 22
+New user correction and product-direction change:
+- The user reported that the current service appeared to be gone
+- The user also clarified that the current build is still fundamentally wrong even after the recent fixes:
+  - the left side still looks like official OpenCode rather than atoms
+  - `Editor` and `Files` are duplicative
+  - the editor has no close-file affordance
+- The user explicitly changed the visual/UX target:
+  - the frontend should fully replicate the atoms product experience
+  - it does **not** need to look like OpenCode
+  - only the technical stack, code organization approach, and backend-calling pattern should stay aligned with the official OpenCode web frontend
+- The user also encouraged using browser automation / live site inspection against atoms as part of the redesign process
+
+My understanding after inspection:
+- The service was not actually down at the time of investigation:
+  - `http://localhost:3000` returned HTTP `200`
+  - `http://localhost:4096` returned HTTP `200`
+- The likely confusion came from the temporary frontend processes created by Playwright/e2e commands, which can shut down automatically after the test run ends even when the long-running dev servers are still available
+- The UI complaints indicate that the current architecture is wrong at a higher level, not just cosmetically
+- The main mismatch is that the current atoms route still renders official OpenCode session visuals directly:
+  - official `MessageTimeline`
+  - official `SessionComposerRegion`
+  - official file tree/editor behavior with only a thin atoms wrapper
+- That approach was useful for quickly preserving behavior, but it cannot satisfy the new explicit goal of "fully atoms in appearance and interaction"
+
+Choice made in this step:
+- Stop treating the current shell as something to polish incrementally
+- Treat this as a design pivot:
+  - keep OpenCode state, SDK, sync, and backend integration patterns
+  - replace the visible session/workspace presentation with atoms-native UI and interaction semantics
+- Do not continue implementing until the redesign direction is presented and approved, because the target has materially changed
+
+Why this choice:
+- The user's clarified target is now different from the earlier compromise approach
+- Continuing to patch the current shell would keep spending effort on the wrong surface model
+- The correct path is to preserve OpenCode's data plumbing while replacing the visual and interaction layer wholesale
+
+Validation completed in this step:
+- `Invoke-WebRequest http://localhost:3000`
+- `Invoke-WebRequest http://localhost:4096`
