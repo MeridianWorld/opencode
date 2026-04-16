@@ -1,5 +1,6 @@
-import { For, Show } from "solid-js"
-import { badge, pill } from "./chrome"
+import { Show } from "solid-js"
+import { badge } from "./chrome"
+import { AtomsModeSwitch } from "./atoms-mode-switch"
 
 export function AtomsTopbar(props: {
   title: string
@@ -35,19 +36,7 @@ export function AtomsTopbar(props: {
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-          <For each={props.items}>
-            {(item) => (
-              <button
-                type="button"
-                onClick={() => props.onSelect(item.id)}
-                class={pill(props.active === item.id)}
-              >
-                {item.label}
-              </button>
-            )}
-          </For>
-        </div>
+        <AtomsModeSwitch active={props.active} items={props.items} onSelect={props.onSelect} />
       </div>
     </header>
   )

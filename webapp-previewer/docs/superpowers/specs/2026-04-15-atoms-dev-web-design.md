@@ -1392,3 +1392,93 @@ Task status after this step:
 - Task 3 is complete
 - The project can move on to Task 4:
   - rebuild the atoms workbench modes and center / right workspace behavior
+
+### 2026-04-16 Record 28
+Task 4 execution result:
+- Task 4 has now completed its implementation
+- The right-side workspace is no longer assembled as one large inline JSX block inside `session.tsx`
+- It is now structured around a dedicated atoms workbench surface with explicit mode branches
+
+Task 4 implementation delivered:
+- `webapp-previewer/src/pages/session/atoms/atoms-workbench.tsx`
+  - added the stable `atoms-workbench` root
+  - now owns explicit mode branches for:
+    - `preview`
+    - `editor`
+    - `files`
+    - `inspect`
+- `webapp-previewer/src/pages/session/atoms/atoms-workbench-header.tsx`
+  - added the shared workbench header body used inside the side surface
+- `webapp-previewer/src/pages/session/atoms/atoms-mode-switch.tsx`
+  - added the shared mode switch control for the workbench top bar
+- `webapp-previewer/src/pages/session/atoms/atoms-files-pane.tsx`
+  - extracted the file-tree / tab-strip / editor-canvas composite pane from inline `session.tsx`
+  - added an explicit changed-files loading state separate from the empty state
+- `webapp-previewer/src/pages/session/atoms/atoms-inspect-pane.tsx`
+  - added the inspect pane shell and made it the real wrapper used by inspect mode
+- `webapp-previewer/src/pages/session/atoms/atoms-page.tsx`
+  - stopped manufacturing its own workbench wrapper
+  - now passes the provided workbench element directly into `AtomsShell`
+- `webapp-previewer/src/pages/session/atoms/atoms-side.tsx`
+  - simplified into a shell that accepts a dedicated header element
+- `webapp-previewer/src/pages/session/atoms/atoms-topbar.tsx`
+  - now delegates mode switching to `AtomsModeSwitch`
+- `webapp-previewer/src/pages/session.tsx`
+  - replaced the large inline right-side workbench block with:
+    - `AtomsWorkbench`
+    - `AtomsFilesPane`
+    - `AtomsInspectPane`
+  - extracted a shared `filesPane()` helper for the current Task 4 `files` and `editor` branches
+  - now passes review loading state into `AtomsFilesPane`
+- `webapp-previewer/e2e/app/atoms-workbench.spec.ts`
+  - added the focused workbench mode-switch test
+  - later strengthened it so it verifies the same workbench DOM node survives mode switches
+
+First spec review findings:
+- The initial Task 4 spec review found three valid gaps:
+  - `editor` was not an explicit workbench branch and was only reached through fallback behavior
+  - `AtomsInspectPane` existed but was not yet the actual inspect wrapper
+  - the focused e2e did not explicitly click the `Editor` mode button
+
+Handling choice made after the first spec review:
+- I accepted all three findings
+- I explicitly chose the narrowest compliant fix for `editor`:
+  - make `editor` a first-class branch in `AtomsWorkbench`
+  - keep Task 4 narrow by temporarily reusing the current `filesPane()` shape for `editor`
+  - do **not** introduce `AtomsEditorPane` yet, because that belongs to Task 5
+
+Second review findings:
+- After the spec gaps were fixed, the code-quality review found two additional issues:
+  - the changed-files pane could not distinguish `loading` from `empty`
+  - the e2e still did not truly prove that the same `atoms-workbench` instance survived mode switches
+
+Handling choice made after the code-quality review:
+- I accepted both findings as real quality issues
+- I sent a narrow follow-up patch that:
+  - added `reviewLoading` and `reviewLoadingText` to `AtomsFilesPane`
+  - wired that loading state from `session.tsx`
+  - strengthened the e2e by stamping the initial workbench node with a test-only DOM marker and re-checking that marker after every mode switch
+
+Verification history in this step:
+- Early focused Playwright attempts during Task 4 were unstable in this environment and sometimes failed during isolated backend startup
+- Final targeted verification after the follow-up patch succeeded
+
+Additional validation completed in the final Task 4 state:
+- `bun typecheck`
+- Result:
+  - passed
+- `bunx playwright test e2e/app/atoms-workbench.spec.ts --workers=1 --reporter=line`
+- Result:
+  - passed
+
+Review outcome:
+- The follow-up spec re-review reported:
+  - `spec compliant`
+- The final code-quality re-review reported:
+  - `approved`
+  - no blocking findings
+
+Task status after this step:
+- Task 4 is complete
+- The project can move on to Task 5:
+  - implement the dedicated atoms editor pane with closable file tabs

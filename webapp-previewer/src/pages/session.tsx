@@ -22,7 +22,6 @@ import { useLocal } from "@/context/local"
 import { selectionFromLines, useFile, type FileSelection, type SelectedLineRange } from "@/context/file"
 import { createStore } from "solid-js/store"
 import { Select } from "@opencode-ai/ui/select"
-import { Tabs } from "@opencode-ai/ui/tabs"
 import { createAutoScroll } from "@opencode-ai/ui/hooks"
 import { previewSelectedLines } from "@opencode-ai/ui/pierre/selection-bridge"
 import { Button } from "@opencode-ai/ui/button"
@@ -30,7 +29,6 @@ import { showToast } from "@opencode-ai/ui/toast"
 import { checksum } from "@opencode-ai/util/encode"
 import { getFilename } from "@opencode-ai/util/path"
 import { useSearchParams } from "@solidjs/router"
-import FileTree from "@/components/file-tree"
 import { NewSessionView } from "@/components/session"
 import { useComments } from "@/context/comments"
 import { getSessionPrefetch, SESSION_PREFETCH_TTL } from "@/context/global-sync/session-prefetch"
@@ -52,16 +50,14 @@ import {
 } from "@/pages/session/helpers"
 import { AtomsComposer } from "@/pages/session/atoms/atoms-composer"
 import { AtomsChat } from "@/pages/session/atoms/atoms-chat"
+import { AtomsFilesPane } from "@/pages/session/atoms/atoms-files-pane"
+import { AtomsInspectPane } from "@/pages/session/atoms/atoms-inspect-pane"
 import { AtomsPage } from "@/pages/session/atoms/atoms-page"
-import { badge, pill, stage, toggle } from "@/pages/session/atoms/chrome"
 import { AtomsPreview } from "@/pages/session/atoms/atoms-preview"
 import { AtomsRail } from "@/pages/session/atoms/atoms-rail"
-import { AtomsSide } from "@/pages/session/atoms/atoms-side"
-import { AtomsStage } from "@/pages/session/atoms/atoms-stage"
 import { buildAtomsRows, reuseAtomsRows, type AtomsRow } from "@/pages/session/atoms/atoms-thread"
+import { AtomsWorkbench } from "@/pages/session/atoms/atoms-workbench"
 import { createAtomsState } from "@/pages/session/atoms/state"
-import { AtomsTopbar } from "@/pages/session/atoms/atoms-topbar"
-import { FileTabContent } from "@/pages/session/file-tabs"
 import { type DiffStyle, SessionReviewTab, type SessionReviewTabProps } from "@/pages/session/review-tab"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { syncSessionModel } from "@/pages/session/session-model-helpers"
@@ -1314,16 +1310,14 @@ export default function Page() {
   )
 
   const reviewPanel = () => (
-    <div class="flex flex-col h-full overflow-hidden bg-background-stronger contain-strict">
-      <div class="relative pt-2 flex-1 min-h-0 overflow-hidden">
-        {reviewContent({
-          diffStyle: layout.review.diffStyle(),
-          onDiffStyleChange: layout.review.setDiffStyle,
-          loadingClass: "px-6 py-4 text-text-weak",
-          emptyClass: "h-full pb-64 -mt-4 flex flex-col items-center justify-center text-center gap-6",
-        })}
-      </div>
-    </div>
+    <AtomsInspectPane>
+      {reviewContent({
+        diffStyle: layout.review.diffStyle(),
+        onDiffStyleChange: layout.review.setDiffStyle,
+        loadingClass: "px-6 py-4 text-text-weak",
+        emptyClass: "h-full pb-64 -mt-4 flex flex-col items-center justify-center text-center gap-6",
+      })}
+    </AtomsInspectPane>
   )
 
   createEffect(
@@ -1982,6 +1976,27 @@ export default function Page() {
     if (!params.id) return "New session"
     return `${visibleUserMessages().length} turns`
   })
+  const reviewLoadingText = createMemo(() => language.t("session.review.loadingChanges"))
+  const filesPane = () => (
+    <AtomsFilesPane
+      tree={fileTreeTab()}
+      setTree={setFileTreeTab}
+      reviewLoading={!reviewReady()}
+      reviewLoadingText={reviewLoadingText()}
+      hasReview={hasReview()}
+      reviewEmpty={reviewEmptyText()}
+      filesEmpty={language.t("session.files.empty")}
+      empty={nofiles()}
+      diff={diffFiles()}
+      kinds={kinds()}
+      active={file.pathFromTab(activeFileTab() ?? "")}
+      open={openFile}
+      tabs={fileTabs()}
+      tab={activeFileTab() ?? undefined}
+      setTab={(tab) => tabs().setActive(tab)}
+      path={(tab) => file.pathFromTab(tab)}
+    />
+  )
 
   return (
     <div class="relative bg-background-base size-full overflow-hidden flex flex-col">
@@ -2059,152 +2074,17 @@ export default function Page() {
           />
         }
         workbench={
-          <>
-            <AtomsTopbar
-              title={sideTitle()}
-              subtitle={sideNote()}
-              active={atoms.mode()}
-              items={railItems().map((item) => ({ id: item.id, label: item.label }))}
-              onSelect={(id) => atoms.setMode(id as "preview" | "editor" | "files" | "inspect")}
-            />
-            <AtomsSide
-              title={sideTitle()}
-              note={
-                <div class={badge()}>
-                  <span class="size-1.5 rounded-full bg-[var(--atoms-accent)]" />
-                  {sideNote()}
-                </div>
-              }
-            >
-              <Switch>
-                <Match when={atoms.mode() === "preview"}>
-                  <AtomsPreview />
-                </Match>
-                <Match when={atoms.mode() === "inspect"}>{reviewPanel()}</Match>
-                <Match when={true}>
-                  <div class="grid size-full min-h-0 min-w-0 grid-cols-1 xl:grid-cols-[17rem_minmax(0,1fr)]">
-                    <aside class="min-h-0 min-w-0 border-b border-[var(--atoms-line)] bg-[var(--atoms-panel)] xl:border-b-0 xl:border-r">
-                      <div class="border-b border-[var(--atoms-line)] px-4 py-3">
-                        <div class="flex items-center justify-between gap-3">
-                          <div class="text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--atoms-soft)]">
-                            File tree
-                          </div>
-                          <div class="flex items-center gap-2 rounded-full border border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] p-1">
-                            <button
-                              type="button"
-                              class={toggle(fileTreeTab() === "changes")}
-                              onClick={() => setFileTreeTab("changes")}
-                            >
-                              Changed
-                            </button>
-                            <button
-                              type="button"
-                              class={toggle(fileTreeTab() === "all")}
-                              onClick={() => setFileTreeTab("all")}
-                            >
-                              All
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="min-h-0 overflow-auto px-3 py-3">
-                        <Switch>
-                          <Match when={fileTreeTab() === "changes" && !hasReview()}>
-                            <div class="rounded-[24px] border border-dashed border-[var(--atoms-line)] bg-[var(--atoms-card)] px-4 py-5 text-[13px] leading-6 text-[var(--atoms-soft)]">
-                              {reviewEmptyText()}
-                            </div>
-                          </Match>
-                          <Match when={fileTreeTab() === "all" && nofiles()}>
-                            <div class="rounded-[24px] border border-dashed border-[var(--atoms-line)] bg-[var(--atoms-card)] px-4 py-5 text-[13px] leading-6 text-[var(--atoms-soft)]">
-                              {language.t("session.files.empty")}
-                            </div>
-                          </Match>
-                          <Match when={fileTreeTab() === "changes"}>
-                            <FileTree
-                              path=""
-                              class="pt-2"
-                              allowed={diffFiles()}
-                              kinds={kinds()}
-                              draggable={false}
-                              active={file.pathFromTab(activeFileTab() ?? "")}
-                              onFileClick={(node) => openFile(node.path)}
-                            />
-                          </Match>
-                          <Match when={true}>
-                            <FileTree
-                              path=""
-                              class="pt-2"
-                              modified={diffFiles()}
-                              kinds={kinds()}
-                              active={file.pathFromTab(activeFileTab() ?? "")}
-                              onFileClick={(node) => openFile(node.path)}
-                            />
-                          </Match>
-                        </Switch>
-                      </div>
-                    </aside>
-
-                    <div class="min-h-0 min-w-0 flex flex-col bg-[var(--atoms-card)]">
-                      <div class="shrink-0 border-b border-[var(--atoms-line)] px-4 py-3">
-                        <Show
-                          when={fileTabs().length > 0}
-                          fallback={
-                            <div class="text-[13px] leading-6 text-[var(--atoms-soft)]">
-                              Select a file to inspect it in the editor.
-                            </div>
-                          }
-                        >
-                          <div class="flex flex-wrap items-center gap-2">
-                            <For each={fileTabs()}>
-                              {(tab) => {
-                                const path = () => file.pathFromTab(tab) ?? tab
-                                return (
-                                  <button
-                                    type="button"
-                                    onClick={() => tabs().setActive(tab)}
-                                    class={pill(activeFileTab() === tab)}
-                                  >
-                                    {getFilename(path())}
-                                  </button>
-                                )
-                              }}
-                            </For>
-                          </div>
-                        </Show>
-                      </div>
-                      <Tabs
-                        value={activeFileTab() ?? "empty"}
-                        onChange={(tab) => {
-                          if (tab === "empty") return
-                          tabs().setActive(tab)
-                        }}
-                        class="min-h-0 min-w-0 flex-1 overflow-hidden"
-                      >
-                        <Tabs.Content value="empty" class="mt-3 h-full">
-                          <div
-                            class="grid h-full min-h-[24rem] place-items-center px-6 text-center"
-                            style={{
-                              background:
-                                "var(--atoms-shell-glow), linear-gradient(180deg, color-mix(in srgb, var(--atoms-card) 92%, transparent), var(--atoms-surface))",
-                            }}
-                          >
-                            <div class="max-w-md">
-                              <div class="text-[26px] font-semibold text-[var(--atoms-ink)]">Editor ready</div>
-                              <div class="mt-3 text-[14px] leading-7 text-[var(--atoms-soft)]">
-                                Open a generated file from the tree or jump from the review view to land here.
-                              </div>
-                            </div>
-                          </div>
-                        </Tabs.Content>
-
-                        <For each={fileTabs()}>{(tab) => <FileTabContent tab={tab} />}</For>
-                      </Tabs>
-                    </div>
-                  </div>
-                </Match>
-              </Switch>
-            </AtomsSide>
-          </>
+          <AtomsWorkbench
+            title={sideTitle()}
+            note={sideNote()}
+            active={atoms.mode()}
+            items={railItems().map((item) => ({ id: item.id, label: item.label }))}
+            onSelect={(id) => atoms.setMode(id as "preview" | "editor" | "files" | "inspect")}
+            preview={<AtomsPreview />}
+            editor={filesPane()}
+            files={filesPane()}
+            inspect={reviewPanel()}
+          />
         }
       />
       <TerminalPanel />
