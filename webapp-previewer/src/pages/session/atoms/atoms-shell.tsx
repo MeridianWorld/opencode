@@ -21,43 +21,44 @@ export function AtomsShell(props: {
         color: "var(--atoms-ink)",
       }}
     >
-      <div style={{ display: "contents" }}>
-        <div
-          style={{
-            "min-width": "0",
-            "min-height": "0",
-            display: "flex",
-            "flex-direction": "column",
-            background: "var(--atoms-chat)",
-            "border-right": "1px solid var(--atoms-line)",
-          }}
-        >
-          {props.stage}
-          {props.composer}
-        </div>
-        <div
-          style={{
-            "min-width": "0",
-            "min-height": "0",
-            background: "var(--atoms-rail)",
-            color: "#fff",
-            "border-right": "1px solid var(--atoms-line)",
-          }}
-        >
-          {props.rail}
-        </div>
-        <div
-          style={{
-            "min-width": "0",
-            "min-height": "0",
-            display: "flex",
-            "flex-direction": "column",
-            background: "var(--atoms-surface)",
-          }}
-        >
-          {props.topbar}
-          <div style={{ "min-width": "0", "min-height": "0", flex: 1 }}>{props.side}</div>
-        </div>
+      <div
+        style={{
+          "min-width": "0",
+          "min-height": "0",
+          display: "flex",
+          "flex-direction": "column",
+          position: "relative",
+          background: "var(--atoms-chat)",
+          "border-right": "1px solid var(--atoms-line)",
+        }}
+      >
+        {props.stage}
+        {props.composer}
+      </div>
+      <div
+        style={{
+          "min-width": "0",
+          "min-height": "0",
+          position: "relative",
+          background: "var(--atoms-rail)",
+          color: "#fff",
+          "border-right": "1px solid var(--atoms-line)",
+        }}
+      >
+        {props.rail}
+      </div>
+      <div
+        style={{
+          "min-width": "0",
+          "min-height": "0",
+          display: "flex",
+          "flex-direction": "column",
+          position: "relative",
+          background: "var(--atoms-surface)",
+        }}
+      >
+        {props.topbar}
+        <div style={{ "min-width": "0", "min-height": "0", flex: 1 }}>{props.side}</div>
       </div>
     </section>
   )

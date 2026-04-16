@@ -559,3 +559,28 @@ Why this choice:
 Validation completed in this step:
 - `bun typecheck`
 - `bunx playwright test e2e/app/atoms-layout.spec.ts e2e/app/atoms-preview.spec.ts e2e/app/atoms-workspace-tabs.spec.ts e2e/app/session.spec.ts --reporter=line`
+
+### 2026-04-16 Record 16
+New user feedback after the dark-theme/tab fix:
+- On the currently running `new session` page, all buttons still appear unclickable in the real UI
+- A screenshot was provided showing the latest dark atoms shell, so this is not an older pale build
+
+My understanding:
+- I could not reproduce the complete failure in automated Chromium against the same local route; direct hit-testing on the visible buttons resolved to the buttons themselves and scripted clicks did switch the atoms workspace
+- That means the issue is likely environment-sensitive rather than a missing `onClick` binding
+- The most suspicious implementation difference is the `display: contents` wrapper inside `src/pages/session/atoms/atoms-shell.tsx`
+- `display: contents` is not used in the surrounding official app shell, and it is known to be fragile for hit-testing and interactivity in some WebView / desktop-shell contexts even when normal Chromium automation still passes
+
+Choice made in this step:
+- Remove the `display: contents` wrapper from `AtomsShell`
+- Render the three atoms columns as normal positioned grid children instead
+- Keep the fix small and avoid bundling unrelated behavioral changes
+
+Why this choice:
+- It directly targets a browser/WebView-specific interaction risk introduced by the atoms shell implementation itself
+- It is a safer layout pattern and aligns better with how the official app shell composes interactive regions
+- The automated tests already covered the expected tab behavior, so this change improves runtime robustness without changing the intended UX contract
+
+Validation completed in this step:
+- `bun typecheck`
+- `bunx playwright test e2e/app/atoms-layout.spec.ts e2e/app/atoms-preview.spec.ts e2e/app/atoms-workspace-tabs.spec.ts --reporter=line`
