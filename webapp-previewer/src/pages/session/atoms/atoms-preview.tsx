@@ -1,6 +1,7 @@
 import { For, Show, createMemo } from "solid-js"
 import { getFilename } from "@opencode-ai/util/path"
 import { useWebAppPreview } from "@/webapp-previewer/use-webapp-preview"
+import { box } from "./atoms-preview-layout"
 
 const modes = [
   { id: "desktop", label: "Desktop", width: "100%" },
@@ -117,6 +118,7 @@ export function AtomsPreview() {
             "min-width": "0",
             "min-height": "0",
             flex: 1,
+            display: "flex",
             overflow: "auto",
             padding: "1.25rem",
             background:
@@ -136,10 +138,10 @@ export function AtomsPreview() {
               </div>
             }
           >
-            <div class="flex min-h-full items-start justify-center">
+            <div class="flex size-full items-stretch justify-center">
               <div
-                class="h-[min(100%,56rem)] min-h-[28rem] overflow-hidden rounded-[30px] border border-[var(--atoms-line)] bg-[var(--atoms-card)] shadow-[var(--atoms-shadow)]"
-                style={{ width: frame().width }}
+                class="overflow-hidden rounded-[30px] border border-[var(--atoms-line)] bg-[var(--atoms-card)] shadow-[var(--atoms-shadow)]"
+                style={box(frame().width)}
               >
                 <iframe
                   src={state().previewUrl!}

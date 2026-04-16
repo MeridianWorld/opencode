@@ -695,3 +695,51 @@ Validation completed in this step:
 - Not fully verifiable locally because of environment limitations:
   - `bunx playwright test e2e/app/atoms-preview.spec.ts --workers=1 --reporter=json` could not complete because the isolated Bun backend crashed on this Windows machine with a Bun stack overflow during startup
   - `bun typecheck` could not complete because `tsgo -b` ran out of memory on this Windows machine
+
+### 2026-04-16 Record 20
+New user-reported issue:
+- The atoms `Preview` panel could finally display the selected HTML page, but the rendered web UI appeared as a short strip near the top of the canvas instead of filling the available preview height
+
+My understanding after root-cause inspection:
+- The sample project in `D:\github_repo\opencode\test-html` is not the cause of the collapsed view:
+  - `body` uses `min-height: 100vh`
+  - `#app` also uses `min-height: 100vh`
+  - the page layout itself is prepared to stretch vertically
+- The actual problem was in `src/pages/session/atoms/atoms-preview.tsx`
+- The preview canvas content region had `flex: 1` but was not itself a flex container
+- Inside it, the preview wrapper used `min-h-full`, and the preview card used `h-[min(100%,56rem)]`
+- That combination depends on a stable parent height chain, which was not guaranteed in this layout
+- In practice, the iframe card could fall back to a much smaller effective height, which matches the user's screenshot where only a thin top strip of the site was visible
+
+Additional error discovered during validation:
+- A direct Bun unit test that imported `atoms-preview.tsx` crashed on this Windows machine with:
+  - `panic(main thread): Illegal instruction`
+- That crash came from Bun's TSX test execution path, not from the atoms preview logic itself
+
+Choices made in this step:
+- Extract the preview card sizing contract into a small pure helper:
+  - `src/pages/session/atoms/atoms-preview-layout.ts`
+- Add a focused regression test for that helper:
+  - `src/pages/session/atoms/atoms-preview-layout.test.ts`
+- Update the atoms preview layout so the height chain is explicit and stable:
+  - make the preview canvas content area a flex container
+  - make the inner wrapper use `size-full items-stretch`
+  - apply explicit preview-card sizing through the helper:
+    - `height: 100%`
+    - `min-height: 28rem`
+    - `max-height: 56rem`
+    - `max-width: 100%`
+
+Why this choice:
+- It fixes the actual layout contract rather than scaling the iframe or adding one-off CSS overrides
+- The pure helper gives a lightweight regression guard without depending on Bun to mount the full TSX component tree on Windows
+- It keeps the atoms preview implementation aligned with the existing official backend `/view` approach while making the atoms shell visually usable
+
+Validation completed in this step:
+- Red first:
+  - `bun test ./src/pages/session/atoms/atoms-preview-layout.test.ts`
+  - failed as expected with `Cannot find module './atoms-preview-layout'`
+- Green after the fix:
+  - `bun test ./src/pages/session/atoms/atoms-preview-layout.test.ts`
+  - `bun test --preload ./happydom.ts ./src/webapp-previewer/use-webapp-preview.test.ts`
+  - `bun typecheck`
