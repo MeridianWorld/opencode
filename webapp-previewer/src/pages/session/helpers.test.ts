@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { createMemo, createRoot } from "solid-js"
 import { createStore } from "solid-js/store"
 import {
+  createOpenFile,
   createOpenReviewFile,
   createOpenSessionFileTab,
   createSessionTabs,
@@ -27,6 +28,56 @@ describe("createOpenReviewFile", () => {
     openReviewFile("src/a.ts")
 
     expect(calls).toEqual(["show", "load:src/a.ts", "tab:src/a.ts", "open:file://src/a.ts", "active:file://src/a.ts"])
+  })
+
+  test("keeps the newest review file active when older loads finish later", async () => {
+    const calls: string[] = []
+    const wait = new Map<
+      string,
+      {
+        done: Promise<void>
+        pass: () => void
+      }
+    >()
+    const openReviewFile = createOpenReviewFile({
+      showAllFiles: () => calls.push("show"),
+      tabForPath: (path) => {
+        calls.push(`tab:${path}`)
+        return `file://${path}`
+      },
+      openTab: (tab) => calls.push(`open:${tab}`),
+      setActive: (tab) => calls.push(`active:${tab}`),
+      loadFile: (path) => {
+        calls.push(`load:${path}`)
+        let pass = () => {}
+        const done = new Promise<void>((resolve) => {
+          pass = resolve
+        })
+        wait.set(path, { done, pass })
+        return done
+      },
+    })
+
+    openReviewFile("alpha.ts")
+    openReviewFile("beta.ts")
+
+    wait.get("beta.ts")?.pass()
+    await wait.get("beta.ts")?.done
+    await Promise.resolve()
+
+    wait.get("alpha.ts")?.pass()
+    await wait.get("alpha.ts")?.done
+    await Promise.resolve()
+
+    expect(calls).toEqual([
+      "show",
+      "load:alpha.ts",
+      "show",
+      "load:beta.ts",
+      "tab:beta.ts",
+      "open:file://beta.ts",
+      "active:file://beta.ts",
+    ])
   })
 })
 
@@ -57,6 +108,52 @@ describe("createOpenSessionFileTab", () => {
       "load:src/a.ts",
       "review",
       "active:file://src/a.ts",
+    ])
+  })
+})
+
+describe("createOpenFile", () => {
+  test("keeps the newest file active when older loads finish later", async () => {
+    const calls: string[] = []
+    const wait = new Map<
+      string,
+      {
+        done: Promise<void>
+        pass: () => void
+      }
+    >()
+    const open = createOpenFile({
+      tabForPath: (path) => `file://${path}`,
+      openTab: (tab) => calls.push(`open:${tab}`),
+      setActive: (tab) => calls.push(`active:${tab}`),
+      loadFile: (path) => {
+        calls.push(`load:${path}`)
+        let pass = () => {}
+        const done = new Promise<void>((resolve) => {
+          pass = resolve
+        })
+        wait.set(path, { done, pass })
+        return done
+      },
+    })
+
+    open("alpha.ts")
+    open("beta.ts")
+
+    wait.get("beta.ts")?.pass()
+    await wait.get("beta.ts")?.done
+    await Promise.resolve()
+
+    wait.get("alpha.ts")?.pass()
+    await wait.get("alpha.ts")?.done
+    await Promise.resolve()
+
+    expect(calls).toEqual([
+      "open:file://alpha.ts",
+      "load:alpha.ts",
+      "open:file://beta.ts",
+      "load:beta.ts",
+      "active:file://beta.ts",
     ])
   })
 })

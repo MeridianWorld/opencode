@@ -108,18 +108,51 @@ export const createOpenReviewFile = (input: {
   setActive: (tab: string) => void
   loadFile: (path: string) => any | Promise<void>
 }) => {
+  let id = 0
+
   return (path: string) => {
     batch(() => {
       input.showAllFiles()
-      const maybePromise = input.loadFile(path)
+      const next = ++id
       const open = () => {
+        if (next !== id) return
         const tab = input.tabForPath(path)
         input.openTab(tab)
         input.setActive(tab)
       }
-      if (maybePromise instanceof Promise) maybePromise.then(open)
-      else open()
+      const task = input.loadFile(path)
+      if (task instanceof Promise) {
+        void task.then(open)
+        return
+      }
+      open()
     })
+  }
+}
+
+export const createOpenFile = (input: {
+  tabForPath: (path: string) => string
+  openTab: (tab: string) => void
+  setActive: (tab: string) => void
+  loadFile: (path: string) => void | Promise<void>
+}) => {
+  let id = 0
+
+  return (path: string) => {
+    const tab = input.tabForPath(path)
+    const next = ++id
+    input.openTab(tab)
+
+    const done = () => {
+      if (next !== id) return
+      input.setActive(tab)
+    }
+    const task = input.loadFile(path)
+    if (task instanceof Promise) {
+      void task.finally(done)
+      return
+    }
+    done()
   }
 }
 

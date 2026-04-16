@@ -1482,3 +1482,115 @@ Task status after this step:
 - Task 4 is complete
 - The project can move on to Task 5:
   - implement the dedicated atoms editor pane with closable file tabs
+
+### 2026-04-17 Record 29
+Task 5 execution result:
+- Task 5 has now completed its implementation and final quality review
+- `Editor` and `Files` are no longer the same workbench surface under different labels
+- The editor now has its own atoms pane, a real closable tab strip, and a real empty state
+
+Task 5 implementation delivered:
+- `webapp-previewer/src/pages/session/atoms/atoms-editor-pane.tsx`
+  - added the dedicated atoms editor surface
+  - preserves the official file rendering path through `FileTabContent`
+  - adds a real empty state when no files are open
+- `webapp-previewer/src/pages/session/atoms/atoms-editor-tabs.tsx`
+  - added atoms-style file chips with visible close buttons
+- `webapp-previewer/src/pages/session/atoms/atoms-files-pane.tsx`
+  - simplified `Files` into a browse / open surface instead of also acting as the editor
+- `webapp-previewer/src/pages/session/atoms/atoms-workbench.tsx`
+  - now switches between a real `files` pane and a real `editor` pane
+- `webapp-previewer/src/pages/session.tsx`
+  - added the dedicated `editorPane()` path
+  - mirrored official session tabs into atoms state with `atoms.syncFiles(...)`
+  - routed file opens through a dedicated helper-based open path
+- `webapp-previewer/src/pages/session/atoms/state.ts`
+  - added `syncFiles(tabs, active)` so the atoms UI can mirror the official session tab state
+- `webapp-previewer/src/pages/session/atoms/state.test.ts`
+  - added coverage for the new `syncFiles(...)` mirror behavior
+- `webapp-previewer/src/pages/session/helpers.ts`
+  - added `createOpenFile(...)`
+  - later updated `createOpenReviewFile(...)` with the same stale-load guard
+- `webapp-previewer/src/pages/session/helpers.test.ts`
+  - added deterministic async race coverage for:
+    - `createOpenFile(...)`
+    - `createOpenReviewFile(...)`
+- `webapp-previewer/e2e/app/atoms-workspace-tabs.spec.ts`
+  - rewrote the focused Task 5 e2e to cover:
+    - dedicated editor pane
+    - separate files pane
+    - closable editor tabs
+    - editor empty state after the last file closes
+
+Handling choice made in this task:
+- I explicitly chose to keep the official session `tabs()` system as the source of truth for actual file content and active-tab behavior
+- The atoms editor UI now mirrors that official tab state rather than inventing a separate content model
+- This is why Task 5 adds:
+  - `atoms.syncFiles(...)`
+  - helper-based tab opening logic
+  instead of replacing `FileTabContent` or the official session tab store
+
+Initial blocker discovered during TDD:
+- The focused Task 5 Playwright spec was initially blocked by local e2e instability
+- Observed issue:
+  - `3000` was already occupied by a local `node` dev server
+  - the first focused Playwright red run exited with code `1` and produced no captured stdout in this shell
+- Handling choice:
+  - confirm that a real RED state existed
+  - then continue implementation rather than letting the task stall on shell-level logging weirdness
+
+First quality review findings:
+- After the main Task 5 implementation landed, the first quality review found a real production-path race:
+  - `openFile()` in `session.tsx` could reactivate an older file after a newer one had already been selected
+- The same review also found that the new coverage still missed the real production path that triggered that race
+
+Handling choice made after the first quality review:
+- I accepted both findings
+- I introduced a narrow helper-based fix rather than redesigning Task 5:
+  - `createOpenFile(...)` now guards against stale async completions
+  - `helpers.test.ts` now proves that opening `alpha` and then `beta` cannot end with stale `alpha` active when `alpha` resolves later
+
+Second quality review finding:
+- The follow-up quality re-review found that `createOpenReviewFile(...)` still had the same stale async activation race for review-file clicks
+
+Handling choice made after the second quality review:
+- I accepted that finding as real
+- I applied the same stale-load guard pattern to `createOpenReviewFile(...)`
+- I added deterministic unit coverage for that review-file path in `helpers.test.ts`
+
+Verification environment issue discovered during this step:
+- One main-thread verification attempt failed with:
+  - `Zone Allocation failed - process out of memory`
+- Root cause:
+  - I had incorrectly run `bun test`, `bun typecheck`, and Playwright in parallel on this Windows machine
+- Handling choice:
+  - stop treating that as a code failure
+  - rerun all Task 5 verification serially
+
+Final validation completed in this step:
+- `bun test ./src/pages/session/helpers.test.ts`
+- Result:
+  - `13 pass`
+  - `0 fail`
+- `bun test ./src/pages/session/atoms/state.test.ts`
+- Result:
+  - `3 pass`
+  - `0 fail`
+- `bun typecheck`
+- Result:
+  - passed
+- `bunx playwright test e2e/app/atoms-workspace-tabs.spec.ts --workers=1 --reporter=line`
+- Result:
+  - passed
+
+Review outcome:
+- Task 5 spec review reported:
+  - `spec compliant`
+- Final code-quality re-review reported:
+  - `approved`
+  - no remaining findings
+
+Task status after this step:
+- Task 5 is complete
+- The project can move on to Task 6:
+  - re-integrate preview / inspect regressions and run final atoms session verification

@@ -17,6 +17,7 @@ export function AtomsWorkbench(props: {
   return (
     <section
       data-component="atoms-workbench"
+      data-mode={props.active}
       style={{
         width: "100%",
         height: "100%",

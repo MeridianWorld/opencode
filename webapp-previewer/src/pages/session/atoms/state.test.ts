@@ -56,4 +56,20 @@ describe("createAtomsState", () => {
       dispose()
     })
   })
+
+  test("syncs file state from external session tabs", () => {
+    createRoot((dispose) => {
+      const atoms = createAtomsState()
+
+      atoms.openFile("src/main.ts")
+      atoms.syncFiles(["alpha.ts", "beta.ts"], "beta.ts")
+      expect(atoms.fileTabs()).toEqual(["alpha.ts", "beta.ts"])
+      expect(atoms.activeFile()).toBe("beta.ts")
+
+      atoms.syncFiles([], undefined)
+      expect(atoms.fileTabs()).toEqual([])
+      expect(atoms.activeFile()).toBe(null)
+      dispose()
+    })
+  })
 })

@@ -43,6 +43,7 @@ import { useTerminal } from "@/context/terminal"
 import { type FollowupDraft, sendFollowupDraft } from "@/components/prompt-input/submit"
 import { createSessionComposerState, SessionComposerRegion } from "@/pages/session/composer"
 import {
+  createOpenFile,
   createOpenReviewFile,
   createSessionTabs,
   focusTerminalById,
@@ -50,6 +51,7 @@ import {
 } from "@/pages/session/helpers"
 import { AtomsComposer } from "@/pages/session/atoms/atoms-composer"
 import { AtomsChat } from "@/pages/session/atoms/atoms-chat"
+import { AtomsEditorPane } from "@/pages/session/atoms/atoms-editor-pane"
 import { AtomsFilesPane } from "@/pages/session/atoms/atoms-files-pane"
 import { AtomsInspectPane } from "@/pages/session/atoms/atoms-inspect-pane"
 import { AtomsPage } from "@/pages/session/atoms/atoms-page"
@@ -1180,17 +1182,14 @@ export default function Page() {
     setActive: tabs().setActive,
     loadFile: file.load,
   })
+  const open = createOpenFile({
+    tabForPath: file.tab,
+    openTab: tabs().open,
+    setActive: tabs().setActive,
+    loadFile: file.load,
+  })
   const openFile = (path: string) => {
-    const tab = file.tab(path)
-    tabs().open(tab)
-    const task = file.load(path)
-    if (task instanceof Promise) {
-      void task.finally(() => {
-        tabs().setActive(tab)
-      })
-    } else {
-      tabs().setActive(tab)
-    }
+    open(path)
     atoms.setMode("editor")
   }
   const openInspectFile = (path: string) => {
@@ -1198,6 +1197,29 @@ export default function Page() {
     atoms.setMode("editor")
   }
   const fileTabs = createMemo(() => openedTabs().filter((tab) => !!file.pathFromTab(tab)))
+  const paths = createMemo(() =>
+    fileTabs().flatMap((tab) => {
+      const path = file.pathFromTab(tab)
+      return path ? [path] : []
+    }),
+  )
+  const activePath = createMemo(() => {
+    const tab = activeFileTab()
+    if (!tab) return null
+    return file.pathFromTab(tab) ?? null
+  })
+
+  createEffect(() => {
+    atoms.syncFiles(paths(), activePath())
+  })
+
+  createEffect(() => {
+    if (atoms.mode() !== "editor") return
+    if (activeFileTab()) return
+    const tab = fileTabs()[0]
+    if (!tab) return
+    tabs().setActive(tab)
+  })
 
   const changesTitle = () => {
     if (!canReview()) {
@@ -1968,7 +1990,7 @@ export default function Page() {
   const sideNote = createMemo(() => {
     const value = atoms.mode()
     if (value === "preview") return `${previewTargets()} targets`
-    if (value === "editor") return `${fileTabs().length} open`
+    if (value === "editor") return `${atoms.fileTabs().length} open`
     if (value === "files") return fileTreeTab() === "changes" ? "Changed files" : "Workspace tree"
     return `${reviewCount()} changes`
   })
@@ -1989,11 +2011,16 @@ export default function Page() {
       empty={nofiles()}
       diff={diffFiles()}
       kinds={kinds()}
-      active={file.pathFromTab(activeFileTab() ?? "")}
+      active={atoms.activeFile() ?? undefined}
       open={openFile}
+    />
+  )
+  const editorPane = () => (
+    <AtomsEditorPane
       tabs={fileTabs()}
       tab={activeFileTab() ?? undefined}
       setTab={(tab) => tabs().setActive(tab)}
+      close={(tab) => tabs().close(tab)}
       path={(tab) => file.pathFromTab(tab)}
     />
   )
@@ -2081,7 +2108,7 @@ export default function Page() {
             items={railItems().map((item) => ({ id: item.id, label: item.label }))}
             onSelect={(id) => atoms.setMode(id as "preview" | "editor" | "files" | "inspect")}
             preview={<AtomsPreview />}
-            editor={filesPane()}
+            editor={editorPane()}
             files={filesPane()}
             inspect={reviewPanel()}
           />

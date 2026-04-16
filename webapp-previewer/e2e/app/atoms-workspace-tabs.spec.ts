@@ -1,44 +1,54 @@
+import fs from "node:fs/promises"
+import path from "node:path"
 import { expect } from "@playwright/test"
 import { test } from "../fixtures"
 
-test("switches workspace tabs on the draft session screen without breaking the shell", async ({ page, gotoSession }) => {
+test("uses a dedicated editor pane with closable file tabs", async ({ page, project }) => {
   await page.setViewportSize({ width: 2048, height: 1003 })
-  await gotoSession()
+  await project.open({
+    setup: async (dir) => {
+      await fs.writeFile(path.join(dir, "alpha.ts"), 'export const alpha = "alpha file"\n')
+      await fs.writeFile(path.join(dir, "beta.ts"), 'export const beta = "beta file"\n')
+    },
+  })
 
-  const topbar = page.locator('[data-component="atoms-topbar"]')
+  const top = page.locator('[data-component="atoms-topbar"]')
   const side = page.locator('[data-component="atoms-side"]')
-  const rail = page.locator('[data-component="atoms-rail"]')
-  const title = (value: string) => side.getByText(new RegExp(`^${value}$`)).first()
-  const errs: string[] = []
-  const onerr = (err: Error) => errs.push(err.message)
+  const editor = page.locator('[data-component="atoms-editor-pane"]')
+  const files = page.locator('[data-component="atoms-files-pane"]')
+  const tabs = page.locator('[data-component="atoms-editor-tabs"]')
 
-  page.on("pageerror", onerr)
+  await top.getByRole("button", { name: /^Editor$/ }).click()
+  await expect(side).toContainText("Editor")
+  await expect(editor).toBeVisible()
+  await expect(editor).toContainText(/No open files/i)
+  await expect(files).toHaveCount(0)
 
-  await expect(topbar).toBeVisible()
-  await expect(title("App Viewer")).toBeVisible()
-
-  await topbar.getByRole("button", { name: /^Files$/ }).click()
-  await expect(title("Files")).toBeVisible()
-  await expect(side.getByText(/Workspace tree|Changed files/i)).toBeVisible()
+  await top.getByRole("button", { name: /^Files$/ }).click()
+  await expect(files).toBeVisible()
   await side.getByRole("button", { name: /^All$/ }).click()
-  await side.locator('[data-component="filetree"]').getByRole("button", { name: /README\.md/i }).first().click()
+  await side.locator('[data-component="filetree"]').getByRole("button", { name: /^alpha\.ts$/ }).click()
 
-  await expect(title("Editor")).toBeVisible()
-  await expect(side.getByRole("button", { name: /README\.md/i }).first()).toBeVisible()
+  await expect(side).toContainText("Editor")
+  await expect(editor).toBeVisible()
+  await expect(files).toHaveCount(0)
+  await expect(tabs).toContainText("alpha.ts")
+  await expect(editor).toContainText("alpha file")
 
-  await rail.getByRole("button", { name: /Editor/i }).click()
-  await expect(title("Editor")).toBeVisible()
+  await top.getByRole("button", { name: /^Files$/ }).click()
+  await side.locator('[data-component="filetree"]').getByRole("button", { name: /^beta\.ts$/ }).click()
 
-  await topbar.getByRole("button", { name: /^Inspect$/ }).click()
-  await expect(title("Inspect")).toBeVisible()
+  await expect(editor).toBeVisible()
+  await expect(tabs).toContainText("alpha.ts")
+  await expect(tabs).toContainText("beta.ts")
+  await expect(editor).toContainText("beta file")
 
-  await topbar.getByRole("button", { name: /^Files$/ }).click()
-  await expect(title("Files")).toBeVisible()
+  await tabs.getByRole("button", { name: /close beta\.ts/i }).click()
+  await expect(tabs).toContainText("alpha.ts")
+  await expect(tabs).not.toContainText("beta.ts")
+  await expect(editor).toContainText("alpha file")
 
-  await rail.getByRole("button", { name: /Preview/i }).click()
-  await expect(title("App Viewer")).toBeVisible()
-  await expect(page.locator('[data-component="atoms-preview"]')).toBeVisible()
-
-  page.off("pageerror", onerr)
-  expect(errs).toEqual([])
+  await tabs.getByRole("button", { name: /close alpha\.ts/i }).click()
+  await expect(editor).toContainText(/No open files/i)
+  await expect(page.locator('[data-component="filetab-content"]')).toHaveCount(0)
 })

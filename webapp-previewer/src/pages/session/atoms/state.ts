@@ -32,6 +32,14 @@ export function createAtomsState() {
     setActiveFile(next.at(-1) ?? null)
   }
 
+  const syncFiles = (tabs: readonly string[], active?: string | null) => {
+    setFileTabs((prev) => {
+      if (prev.length === tabs.length && prev.every((item, i) => item === tabs[i])) return prev
+      return [...tabs]
+    })
+    setActiveFile(active ?? null)
+  }
+
   return {
     mode,
     fileTabs,
@@ -42,6 +50,7 @@ export function createAtomsState() {
     openFile,
     activateFile,
     closeFile,
+    syncFiles,
     toggleRail: () => setRail((value) => !value),
     toggleSide: () => setSide((value) => !value),
   }
