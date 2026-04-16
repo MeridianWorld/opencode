@@ -1,12 +1,6 @@
 import type { JSX } from "solid-js"
 
-export function AtomsShell(props: {
-  stage: JSX.Element
-  rail: JSX.Element
-  topbar: JSX.Element
-  side: JSX.Element
-  composer: JSX.Element
-}) {
+export function AtomsShell(props: { chat: JSX.Element; rail: JSX.Element; workbench: JSX.Element }) {
   return (
     <section
       data-component="atoms-shell"
@@ -32,8 +26,7 @@ export function AtomsShell(props: {
           "border-right": "1px solid var(--atoms-line)",
         }}
       >
-        {props.stage}
-        {props.composer}
+        {props.chat}
       </div>
       <div
         style={{
@@ -57,8 +50,7 @@ export function AtomsShell(props: {
           background: "var(--atoms-surface)",
         }}
       >
-        {props.topbar}
-        <div style={{ "min-width": "0", "min-height": "0", flex: 1 }}>{props.side}</div>
+        {props.workbench}
       </div>
     </section>
   )

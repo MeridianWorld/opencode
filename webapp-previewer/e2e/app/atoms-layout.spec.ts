@@ -6,8 +6,11 @@ test("renders the atoms workspace shell around the routed session", async ({ pag
   await withSession(sdk, `atoms layout ${Date.now()}`, async (session) => {
     await gotoSession(session.id)
     await expect(page.locator('[data-component="atoms-shell"]')).toBeVisible()
+    await expect(page.locator('[data-component="atoms-page"]')).toBeVisible()
+    await expect(page.locator('[data-component="atoms-chat"]')).toBeVisible()
     await expect(page.locator('[data-component="atoms-stage"]')).toBeVisible()
     await expect(page.locator('[data-component="atoms-rail"]')).toBeVisible()
+    await expect(page.locator('[data-component="atoms-workbench"]')).toBeVisible()
     await expect(page.locator('[data-component="atoms-topbar"]')).toBeVisible()
     await expect(page.locator('[data-component="atoms-side"]')).toBeVisible()
     await expect(page.locator('[data-component="atoms-composer"]')).toBeVisible()

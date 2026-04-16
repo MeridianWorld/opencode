@@ -1232,3 +1232,72 @@ Task status after this step:
 - Task 1 is complete
 - The project can move on to Task 2:
   - create the atoms page composition root and shell skeleton
+
+### 2026-04-16 Record 26
+Task 2 execution result:
+- Task 2 has now completed its structural implementation and passed the spec-compliance review
+- The routed session page now has a dedicated atoms page composition root rather than directly wiring `AtomsShell` inside `session.tsx`
+
+Task 2 implementation delivered:
+- `webapp-previewer/src/pages/session/atoms/atoms-page.tsx`
+  - newly created composition root
+  - owns the page-level structural markers:
+    - `atoms-page`
+    - `atoms-chat`
+    - `atoms-workbench`
+- `webapp-previewer/src/pages/session/atoms/atoms-shell.tsx`
+  - simplified into a three-slot shell:
+    - `chat`
+    - `rail`
+    - `workbench`
+- `webapp-previewer/src/pages/session.tsx`
+  - switched from rendering `AtomsShell` directly to rendering `AtomsPage`
+  - migrated stale atoms state call sites from:
+    - `atoms.view()`
+    - `atoms.setView(...)`
+    to:
+    - `atoms.mode()`
+    - `atoms.setMode(...)`
+- `webapp-previewer/e2e/app/atoms-layout.spec.ts`
+  - updated to assert the new page-level markers
+
+First code-quality review issue:
+- The initial Task 2 quality review found a test-coverage regression:
+  - the updated layout e2e asserted the new `atoms-page`, `atoms-chat`, and `atoms-workbench` markers
+  - but it had dropped the old `atoms-shell` assertion
+- That weakened the proof that the underlying three-column shell still exists
+
+Handling choice made:
+- Treat this as a valid review issue
+- Send a narrow follow-up fix that only restores the `atoms-shell` assertion, without reopening the Task 2 implementation surface
+
+Additional execution errors discovered during the follow-up:
+- The first follow-up implementer agent errored with:
+  - `timeout waiting for child process to exit`
+- I inspected the test file immediately afterward and confirmed the intended assertion had **not** been written yet
+- I then dispatched a fresh narrow fix agent for the same single-file patch
+
+Environment limitation discovered during verification:
+- After restoring the `atoms-shell` assertion, Playwright could not complete because the isolated e2e backend failed before the test assertions ran
+- Observed error:
+  - `Failed to start isolated e2e backend for w0`
+  - `backend exited before health check`
+  - `exit code: 3221226505`
+
+Why this is treated as an environment limitation rather than a Task 2 code failure:
+- The failing point is backend startup in `e2e/backend.ts`, before the test body can validate atoms layout markers
+- The code-quality re-review accepted the changed files after inspecting the actual source and test code
+- The layout test file now includes both:
+  - the new page-level markers
+  - the restored `atoms-shell` assertion
+
+Additional validation completed in this step:
+- Confirmed in `session.tsx` that no stale usages remain for:
+  - `atoms.view(`
+  - `atoms.setView(`
+- Main-thread Playwright rerun captured the backend startup failure explicitly rather than failing silently
+
+Task status after this step:
+- Task 2 is complete
+- The project can move on to Task 3:
+  - build the atoms row adapter and left chat workspace
