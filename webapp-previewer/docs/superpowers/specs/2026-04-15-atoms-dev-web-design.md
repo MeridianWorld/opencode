@@ -1301,3 +1301,94 @@ Task status after this step:
 - Task 2 is complete
 - The project can move on to Task 3:
   - build the atoms row adapter and left chat workspace
+
+### 2026-04-16 Record 27
+Task 3 execution result:
+- Task 3 has now completed its implementation and passed both spec review and the follow-up code-quality re-review
+- The left conversation area is no longer using the old `MessageTimeline` surface directly
+- It now renders through an atoms-native chat layer while still reading the official OpenCode session data
+
+Task 3 implementation delivered:
+- `webapp-previewer/src/pages/session/atoms/atoms-thread.ts`
+  - added the atoms row adapter for:
+    - user rows
+    - assistant rows
+    - activity rows
+    - decision rows
+  - added `reuseAtomsRows(prev, next)` so unchanged row objects retain stable identity across recomputations
+- `webapp-previewer/src/pages/session/atoms/atoms-thread.test.ts`
+  - added targeted coverage for:
+    - user / assistant / activity / decision row mapping
+    - permission-request mapping
+    - assistant error fallback when no text part exists
+    - retry status row mapping
+    - row-object reuse for unchanged content
+    - row replacement when content changes
+- `webapp-previewer/src/pages/session/atoms/atoms-chat.tsx`
+  - added the atoms chat composition surface
+- `webapp-previewer/src/pages/session/atoms/atoms-chat-header.tsx`
+  - added the atoms chat header
+- `webapp-previewer/src/pages/session/atoms/atoms-chat-stream.tsx`
+  - added the atoms scrollable stream shell
+- `webapp-previewer/src/pages/session/atoms/atoms-message.tsx`
+  - added atoms-style user / assistant message cards
+- `webapp-previewer/src/pages/session/atoms/atoms-activity-card.tsx`
+  - added atoms-style activity summaries for tools and background steps
+- `webapp-previewer/src/pages/session/atoms/atoms-decision-card.tsx`
+  - added atoms-style decision / permission summary cards
+- `webapp-previewer/src/pages/session/atoms/atoms-composer.tsx`
+  - aligned the composer wrapper with the new atoms chat surface layout
+- `webapp-previewer/src/pages/session/atoms/atoms-page.tsx`
+  - moved the chat slot ownership to the new atoms chat component
+- `webapp-previewer/src/pages/session.tsx`
+  - replaced the left `MessageTimeline` rendering path with `AtomsChat`
+  - now derives `atomsRows` from official session messages and parts through `buildAtomsRows(...)`
+  - now reuses prior row objects through `reuseAtomsRows(...)` inside the memoized session mapping
+- `webapp-previewer/e2e/app/atoms-chat.spec.ts`
+  - added a focused atoms chat e2e covering:
+    - active-session atoms chat shell
+    - no-active-session draft branch / new-session surface
+
+Review issue discovered and handling choice:
+- The first Task 3 code-quality review found a real integration risk:
+  - `buildAtomsRows()` returned brand-new row objects on every recomputation
+  - because `AtomsChatStream` renders rows with Solid's `For`, that could cause avoidable remounts and scroll / focus churn
+- I accepted this as a valid issue
+- The intended original implementer agent then became unavailable during follow-up handling
+  - observed status: `not_found`
+- I therefore chose to:
+  - inspect the current workspace state directly
+  - verify whether the required fix had already landed in files
+  - run a fresh focused code-quality re-review on the landed code instead of blindly redispatching the same missing agent
+
+Follow-up review result:
+- The re-review approved the Task 3 patch with no remaining findings
+- Reviewer-confirmed outcomes:
+  - stable row reuse is now present in `atoms-thread.ts`
+  - `session.tsx` now actually wires that reuse into the atoms chat memo
+  - the missing unit and e2e coverage from the prior review are now present
+
+Additional environment limitation discovered during verification:
+- Focused Playwright verification for:
+  - `bunx playwright test e2e/app/atoms-chat.spec.ts --workers=1 --reporter=line`
+  exited abnormally in this Windows environment with:
+  - exit code: `-1073740791`
+- The run did not emit usable Playwright logs before exiting
+- I am recording this as an environment verification gap rather than a proven Task 3 code defect because:
+  - the targeted Bun unit tests pass
+  - `bun typecheck` passes in `webapp-previewer`
+  - the focused re-review of the actual source changes approved the patch with no code findings
+
+Additional validation completed in this step:
+- `bun test ./src/pages/session/atoms/atoms-thread.test.ts`
+- Result:
+  - `6 pass`
+  - `0 fail`
+- `bun typecheck`
+- Result:
+  - passed
+
+Task status after this step:
+- Task 3 is complete
+- The project can move on to Task 4:
+  - rebuild the atoms workbench modes and center / right workspace behavior

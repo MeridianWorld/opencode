@@ -10,6 +10,9 @@ export function AtomsComposer(props: ParentProps<{ hints?: readonly string[] }>)
         padding: "0.75rem 1rem 1rem",
         "border-top": "1px solid var(--atoms-line)",
         background: "var(--atoms-chat)",
+        display: "flex",
+        "flex-direction": "column",
+        gap: "0.75rem",
       }}
     >
       <Show when={props.hints && props.hints.length > 0}>

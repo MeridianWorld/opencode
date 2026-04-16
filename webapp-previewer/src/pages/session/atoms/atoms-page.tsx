@@ -13,21 +13,7 @@ export function AtomsPage(props: { chat: JSX.Element; rail: JSX.Element; workben
       }}
     >
       <AtomsShell
-        chat={
-          <div
-            data-component="atoms-chat"
-            style={{
-              width: "100%",
-              height: "100%",
-              "min-width": "0",
-              "min-height": "0",
-              display: "flex",
-              "flex-direction": "column",
-            }}
-          >
-            {props.chat}
-          </div>
-        }
+        chat={props.chat}
         rail={props.rail}
         workbench={
           <div

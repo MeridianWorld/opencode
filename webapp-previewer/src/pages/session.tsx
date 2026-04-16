@@ -51,16 +51,17 @@ import {
   shouldFocusTerminalOnKeyDown,
 } from "@/pages/session/helpers"
 import { AtomsComposer } from "@/pages/session/atoms/atoms-composer"
+import { AtomsChat } from "@/pages/session/atoms/atoms-chat"
 import { AtomsPage } from "@/pages/session/atoms/atoms-page"
 import { badge, pill, stage, toggle } from "@/pages/session/atoms/chrome"
 import { AtomsPreview } from "@/pages/session/atoms/atoms-preview"
 import { AtomsRail } from "@/pages/session/atoms/atoms-rail"
 import { AtomsSide } from "@/pages/session/atoms/atoms-side"
 import { AtomsStage } from "@/pages/session/atoms/atoms-stage"
+import { buildAtomsRows, reuseAtomsRows, type AtomsRow } from "@/pages/session/atoms/atoms-thread"
 import { createAtomsState } from "@/pages/session/atoms/state"
 import { AtomsTopbar } from "@/pages/session/atoms/atoms-topbar"
 import { FileTabContent } from "@/pages/session/file-tabs"
-import { MessageTimeline } from "@/pages/session/message-timeline"
 import { type DiffStyle, SessionReviewTab, type SessionReviewTabProps } from "@/pages/session/review-tab"
 import { useSessionLayout } from "@/pages/session/session-layout"
 import { syncSessionModel } from "@/pages/session/session-model-helpers"
@@ -483,6 +484,20 @@ export default function Page() {
     },
   )
   const lastUserMessage = createMemo(() => visibleUserMessages().at(-1))
+  const atomsRows = createMemo<AtomsRow[]>(
+    (prev) =>
+      reuseAtomsRows(
+        prev ?? [],
+        buildAtomsRows({
+          messages: messages(),
+          partsByMessage: sync.data.part,
+          questionRequest: composer.questionRequest,
+          permissionRequest: composer.permissionRequest,
+          sessionStatus: () => (params.id ? sync.data.session_status[params.id] : undefined),
+        }),
+      ),
+    [],
+  )
 
   createEffect(() => {
     const tab = activeFileTab()
@@ -1973,75 +1988,14 @@ export default function Page() {
       <AtomsPage
         chat={
           <>
-            <AtomsStage
-              eyebrow="Conversation"
+            <AtomsChat
               title={projectName()}
-              note={
-                <div class={badge()}>
-                  <span class="size-1.5 rounded-full bg-[var(--atoms-accent)]" />
-                  {stageNote()}
-                </div>
-              }
-            >
-              <div class={stage()}>
-                <Switch>
-                  <Match when={params.id}>
-                    <Show
-                      when={messagesReady()}
-                      fallback={
-                        <div class="grid h-full place-items-center text-[14px] text-[var(--atoms-soft)]">
-                          Loading session...
-                        </div>
-                      }
-                    >
-                      <MessageTimeline
-                        mobileChanges={mobileChanges()}
-                        mobileFallback={reviewContent({
-                          diffStyle: "unified",
-                          classes: {
-                            root: "pb-8",
-                            header: "px-4",
-                            container: "px-4",
-                          },
-                          loadingClass: "px-4 py-4 text-text-weak",
-                          emptyClass: "h-full pb-64 -mt-4 flex flex-col items-center justify-center text-center gap-6",
-                        })}
-                        actions={actions}
-                        scroll={ui.scroll}
-                        onResumeScroll={resumeScroll}
-                        setScrollRef={setScrollRef}
-                        onScheduleScrollState={scheduleScrollState}
-                        onAutoScrollHandleScroll={autoScroll.handleScroll}
-                        onMarkScrollGesture={markScrollGesture}
-                        hasScrollGesture={hasScrollGesture}
-                        onUserScroll={markUserScroll}
-                        onTurnBackfillScroll={historyWindow.onScrollerScroll}
-                        onAutoScrollInteraction={autoScroll.handleInteraction}
-                        centered={centered()}
-                        setContentRef={(el) => {
-                          content = el
-                          autoScroll.contentRef(el)
-
-                          const root = scroller
-                          if (root) scheduleScrollState(root)
-                        }}
-                        turnStart={historyWindow.turnStart()}
-                        historyMore={historyMore()}
-                        historyLoading={historyLoading()}
-                        onLoadEarlier={() => {
-                          void historyWindow.loadAndReveal()
-                        }}
-                        renderedUserMessages={historyWindow.renderedUserMessages()}
-                        anchor={anchor}
-                      />
-                    </Show>
-                  </Match>
-                  <Match when={true}>
-                    <NewSessionView worktree={newSessionWorktree()} />
-                  </Match>
-                </Switch>
-              </div>
-            </AtomsStage>
+              note={stageNote()}
+              rows={atomsRows()}
+              ready={messagesReady()}
+              active={!!params.id}
+              newSessionWorktree={newSessionWorktree()}
+            />
             <AtomsComposer hints={["Scaffold UI", "Open changed files", "Review latest diff"]}>
               <SessionComposerRegion
                 state={composer}
