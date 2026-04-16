@@ -14,7 +14,7 @@ export function AtomsTopbar(props: {
         "flex-shrink": 0,
         padding: "1rem 1.25rem",
         "border-bottom": "1px solid var(--atoms-line)",
-        background: "rgba(251,250,247,0.92)",
+        background: "color-mix(in srgb, var(--atoms-card) 92%, transparent)",
         "backdrop-filter": "blur(12px)",
       }}
     >
@@ -41,9 +41,9 @@ export function AtomsTopbar(props: {
                 onClick={() => props.onSelect(item.id)}
                 class="rounded-full border px-4 py-2 text-[14px] font-medium transition"
                 classList={{
-                  "border-[var(--atoms-line)] bg-white text-[var(--atoms-soft)] hover:border-[var(--atoms-accent)] hover:text-[var(--atoms-ink)]":
+                  "border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] text-[var(--atoms-soft)] hover:border-[var(--atoms-accent)] hover:text-[var(--atoms-ink)]":
                     props.active !== item.id,
-                  "border-[var(--atoms-accent)] bg-[var(--atoms-chip)] text-[var(--atoms-ink)] shadow-[0_10px_24px_rgba(63,110,245,0.14)]":
+                  "border-[var(--atoms-accent)] bg-[var(--atoms-chip)] text-[var(--atoms-ink)] shadow-[var(--atoms-shadow-soft)]":
                     props.active === item.id,
                 }}
               >

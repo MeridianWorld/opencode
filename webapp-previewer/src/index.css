@@ -13,26 +13,27 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
-  color: #1e293b;
-  background-color: #f8fafc;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-:root {
-  --atoms-page: #f4f1ea;
-  --atoms-chat: #f6f3ed;
-  --atoms-surface: #fbfaf7;
-  --atoms-panel: #f2ede4;
-  --atoms-rail: #223e67;
-  --atoms-ink: #13233d;
-  --atoms-soft: #5c6980;
-  --atoms-line: rgba(19, 35, 61, 0.12);
-  --atoms-accent: #3f6ef5;
-  --atoms-chip: rgba(63, 110, 245, 0.12);
+[data-component="atoms-shell"] {
+  --atoms-page: var(--background-base);
+  --atoms-chat: color-mix(in srgb, var(--background-base) 86%, var(--surface-raised-stronger-non-alpha));
+  --atoms-surface: var(--surface-raised-stronger-non-alpha);
+  --atoms-panel: var(--surface-base);
+  --atoms-card: var(--surface-raised-stronger-non-alpha);
+  --atoms-card-muted: var(--surface-raised-base);
+  --atoms-rail: #142846;
+  --atoms-ink: var(--text-strong);
+  --atoms-soft: var(--text-weak);
+  --atoms-line: color-mix(in srgb, var(--border-base) 82%, transparent);
+  --atoms-accent: var(--text-interactive-base);
+  --atoms-chip: color-mix(in srgb, var(--text-interactive-base) 18%, transparent);
+  --atoms-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  --atoms-shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.22);
+  --atoms-shell-glow:
+    radial-gradient(circle at top, color-mix(in srgb, var(--text-interactive-base) 18%, transparent), transparent 48%);
 }
 
 /* Remove default button styles */

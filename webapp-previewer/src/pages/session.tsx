@@ -353,7 +353,6 @@ export default function Page() {
 
   const [ui, setUi] = createStore({
     pendingMessage: undefined as string | undefined,
-    reviewSnap: false,
     scrollGesture: 0,
     scroll: {
       overflow: false,
@@ -405,8 +404,6 @@ export default function Page() {
   )
 
   const isDesktop = createMediaQuery("(min-width: 768px)")
-  const desktopReviewOpen = createMemo(() => isDesktop() && view().reviewPanel.opened())
-  const desktopFileTreeOpen = createMemo(() => isDesktop() && layout.fileTree.opened())
   const centered = createMemo(() => isDesktop() && atoms.view() !== "inspect")
 
   function normalizeTab(tab: string) {
@@ -424,10 +421,6 @@ export default function Page() {
       next.push(value)
     }
     return next
-  }
-
-  const openReviewPanel = () => {
-    if (!view().reviewPanel.opened()) view().reviewPanel.open()
   }
 
   const info = createMemo(() => (params.id ? sync.session.get(params.id) : undefined))
@@ -564,7 +557,6 @@ export default function Page() {
     return key
   }, sessionKey())
 
-  let reviewFrame: number | undefined
   let refreshFrame: number | undefined
   let refreshTimer: number | undefined
   let todoFrame: number | undefined
@@ -633,19 +625,6 @@ export default function Page() {
     if (!untrack(wantsReview)) return
     void loadVcs(mode, true)
   }
-
-  createComputed((prev) => {
-    const open = desktopReviewOpen()
-    if (prev === undefined || prev === open) return open
-
-    if (reviewFrame !== undefined) cancelAnimationFrame(reviewFrame)
-    setUi("reviewSnap", true)
-    reviewFrame = requestAnimationFrame(() => {
-      reviewFrame = undefined
-      setUi("reviewSnap", false)
-    })
-    return open
-  }, desktopReviewOpen())
 
   const turnDiffs = createMemo(() => lastUserMessage()?.summary?.diffs ?? [])
   const changesOptions = createMemo<ChangeMode[]>(() => {
@@ -1140,21 +1119,8 @@ export default function Page() {
     on(
       () => atoms.view(),
       (value) => {
-        if (value === "inspect") {
-          if (!view().reviewPanel.opened()) view().reviewPanel.open()
-          if (layout.fileTree.opened()) layout.fileTree.close()
-          return
-        }
-
-        if (view().reviewPanel.opened()) view().reviewPanel.close()
-
-        if (value === "files" || value === "editor") {
-          if (!layout.fileTree.opened()) layout.fileTree.open()
-          if (value === "files") layout.fileTree.setTab("all")
-          return
-        }
-
-        if (layout.fileTree.opened()) layout.fileTree.close()
+        if (value !== "files") return
+        layout.fileTree.setTab("all")
       },
       { defer: true },
     ),
@@ -1392,7 +1358,6 @@ export default function Page() {
 
   const focusReviewDiff = (path: string) => {
     atoms.setView("inspect")
-    openReviewPanel()
     view().review.openPath(path)
     setTree({ activeDiff: path, pendingDiff: path })
   }
@@ -1480,7 +1445,7 @@ export default function Page() {
   createEffect(() => {
     const dir = sdk.directory
     if (!isDesktop()) return
-    if (!layout.fileTree.opened()) return
+    if (atoms.view() !== "files" && atoms.view() !== "editor") return
     if (sync.status === "loading") return
 
     fileTreeTab()
@@ -1961,7 +1926,6 @@ export default function Page() {
   })
 
   onCleanup(() => {
-    if (reviewFrame !== undefined) cancelAnimationFrame(reviewFrame)
     if (refreshFrame !== undefined) cancelAnimationFrame(refreshFrame)
     if (refreshTimer !== undefined) window.clearTimeout(refreshTimer)
     if (todoFrame !== undefined) cancelAnimationFrame(todoFrame)
@@ -2010,7 +1974,7 @@ export default function Page() {
             eyebrow="Conversation"
             title={projectName()}
             note={
-              <div class="rounded-full border border-[var(--atoms-line)] bg-white px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
+              <div class="rounded-full border border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
                 {stageNote()}
               </div>
             }
@@ -2148,7 +2112,7 @@ export default function Page() {
           <AtomsSide
             title={sideTitle()}
             note={
-              <div class="rounded-full border border-[var(--atoms-line)] bg-white px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
+              <div class="rounded-full border border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
                 {sideNote()}
               </div>
             }
@@ -2168,7 +2132,7 @@ export default function Page() {
                         <div class="text-[12px] font-semibold uppercase tracking-[0.18em] text-[var(--atoms-soft)]">
                           File tree
                         </div>
-                        <div class="flex items-center gap-2 rounded-full border border-[var(--atoms-line)] bg-white p-1">
+                        <div class="flex items-center gap-2 rounded-full border border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] p-1">
                           <button
                             type="button"
                             class="rounded-full px-3 py-1 text-[12px] font-medium transition"
@@ -2197,12 +2161,12 @@ export default function Page() {
                     <div class="min-h-0 overflow-auto px-3 py-3">
                       <Switch>
                         <Match when={fileTreeTab() === "changes" && !hasReview()}>
-                          <div class="rounded-[24px] border border-dashed border-[var(--atoms-line)] bg-white px-4 py-5 text-[13px] leading-6 text-[var(--atoms-soft)]">
+                          <div class="rounded-[24px] border border-dashed border-[var(--atoms-line)] bg-[var(--atoms-card)] px-4 py-5 text-[13px] leading-6 text-[var(--atoms-soft)]">
                             {reviewEmptyText()}
                           </div>
                         </Match>
                         <Match when={fileTreeTab() === "all" && nofiles()}>
-                          <div class="rounded-[24px] border border-dashed border-[var(--atoms-line)] bg-white px-4 py-5 text-[13px] leading-6 text-[var(--atoms-soft)]">
+                          <div class="rounded-[24px] border border-dashed border-[var(--atoms-line)] bg-[var(--atoms-card)] px-4 py-5 text-[13px] leading-6 text-[var(--atoms-soft)]">
                             {language.t("session.files.empty")}
                           </div>
                         </Match>
@@ -2231,7 +2195,7 @@ export default function Page() {
                     </div>
                   </aside>
 
-                  <div class="min-h-0 min-w-0 flex flex-col bg-white">
+                  <div class="min-h-0 min-w-0 flex flex-col bg-[var(--atoms-card)]">
                     <div class="shrink-0 border-b border-[var(--atoms-line)] px-4 py-3">
                       <Show
                         when={fileTabs().length > 0}
@@ -2265,7 +2229,13 @@ export default function Page() {
                       <Show
                         when={activeFileTab()}
                         fallback={
-                          <div class="grid h-full min-h-[24rem] place-items-center bg-[linear-gradient(180deg,#fff_0%,#faf8f3_100%)] px-6 text-center">
+                          <div
+                            class="grid h-full min-h-[24rem] place-items-center px-6 text-center"
+                            style={{
+                              background:
+                                "var(--atoms-shell-glow), linear-gradient(180deg, color-mix(in srgb, var(--atoms-card) 92%, transparent), var(--atoms-surface))",
+                            }}
+                          >
                             <div class="max-w-md">
                               <div class="text-[26px] font-semibold text-[var(--atoms-ink)]">Editor ready</div>
                               <div class="mt-3 text-[14px] leading-7 text-[var(--atoms-soft)]">

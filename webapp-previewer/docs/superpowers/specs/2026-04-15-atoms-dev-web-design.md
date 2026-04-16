@@ -530,3 +530,32 @@ Choice made:
   - backend on `http://localhost:4096`
   - frontend on `http://localhost:5173`
 - Start them as detached local processes so the app stays up after this message
+
+### 2026-04-16 Record 15
+User feedback after seeing the running page:
+- The interface looks inconsistent because the official opencode shell is dark while the new atoms workspace is still bright and pale
+- The workspace tabs are unreliable: some feel unclickable and some appear to error when switching
+- A Chrome DevTools MCP inspection path was suggested
+
+My understanding:
+- The visual problem is not only "needs polish"; the current atoms theme is structurally wrong because `src/index.css` applies a light atoms palette at the global root level
+- That global palette leaks into the routed session shell and clashes with the official opencode dark theme
+- The workspace tab issue is most likely caused by our atoms tab state still driving the official `reviewPanel` and `fileTree` layout state, which means one user action is trying to control two shells at once
+- In this session there is no available Chrome DevTools MCP resource, so the safest debugging path is local code inspection plus regression tests
+
+Choices made in this step:
+- Add a dedicated draft-screen regression test: `webapp-previewer/e2e/app/atoms-workspace-tabs.spec.ts`
+- Run that test at a desktop viewport close to the user's screenshot size so the regression check matches the reported interaction surface
+- Scope atoms theme tokens under `[data-component="atoms-shell"]` instead of `:root`
+- Remap the atoms palette to official opencode theme tokens (`--background-base`, `--surface-raised-*`, `--text-*`, `--border-base`) instead of keeping the earlier pale beige palette
+- Stop using atoms tab switches to open and close the official `reviewPanel` and `fileTree`; keep only the atoms-local view state and load file-tree data directly when the atoms workspace is on `files` or `editor`
+
+Why this choice:
+- Scoping the theme fixes the "black shell + white insert" mismatch at the source instead of repainting isolated components one by one
+- Reusing the official theme tokens keeps the new workspace visually aligned with opencode while still allowing an atoms-like information layout
+- Decoupling tab clicks from the official outer layout removes a hidden source of state conflicts and better matches the intended product model: the atoms workspace should manage its own right-side surface
+- The new e2e provides a concrete regression guard for tab switching on the new-session screen, which is exactly where the user reported instability
+
+Validation completed in this step:
+- `bun typecheck`
+- `bunx playwright test e2e/app/atoms-layout.spec.ts e2e/app/atoms-preview.spec.ts e2e/app/atoms-workspace-tabs.spec.ts e2e/app/session.spec.ts --reporter=line`

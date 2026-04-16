@@ -46,7 +46,7 @@ export function AtomsPreview() {
           <Show
             when={preview.detectedFiles().length > 0}
             fallback={
-              <div class="rounded-[24px] border border-dashed border-[var(--atoms-line)] bg-white px-4 py-5 text-[13px] leading-6 text-[var(--atoms-soft)]">
+              <div class="rounded-[24px] border border-dashed border-[var(--atoms-line)] bg-[var(--atoms-card)] px-4 py-5 text-[13px] leading-6 text-[var(--atoms-soft)]">
                 No HTML output detected yet. Ask the agent to scaffold a page and this panel will attach itself.
               </div>
             }
@@ -61,8 +61,8 @@ export function AtomsPreview() {
                     }}
                     class="rounded-[22px] border px-4 py-3 text-left transition"
                     classList={{
-                      "border-[var(--atoms-line)] bg-white hover:border-[var(--atoms-accent)]": state().filePath !== file.path,
-                      "border-[var(--atoms-accent)] bg-[var(--atoms-chip)] shadow-[0_12px_30px_rgba(63,110,245,0.14)]":
+                      "border-[var(--atoms-line)] bg-[var(--atoms-card)] hover:border-[var(--atoms-accent)]": state().filePath !== file.path,
+                      "border-[var(--atoms-accent)] bg-[var(--atoms-chip)] shadow-[var(--atoms-shadow-soft)]":
                         state().filePath === file.path,
                     }}
                   >
@@ -80,7 +80,7 @@ export function AtomsPreview() {
         <div style={{ padding: "0.75rem 1rem", "border-bottom": "1px solid var(--atoms-line)", "flex-shrink": 0 }}>
           <div class="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
             <div class="min-w-0">
-              <div class="truncate rounded-full border border-[var(--atoms-line)] bg-white px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
+              <div class="truncate rounded-full border border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
                 {state().filePath ? getFilename(state().filePath ?? undefined) : "Awaiting preview"}
               </div>
             </div>
@@ -92,7 +92,7 @@ export function AtomsPreview() {
                     onClick={() => preview.setDeviceMode(item.id)}
                     class="rounded-full border px-3 py-1.5 text-[13px] font-medium transition"
                     classList={{
-                      "border-[var(--atoms-line)] bg-white text-[var(--atoms-soft)] hover:text-[var(--atoms-ink)]":
+                      "border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] text-[var(--atoms-soft)] hover:text-[var(--atoms-ink)]":
                         state().deviceMode !== item.id,
                       "border-[var(--atoms-accent)] bg-[var(--atoms-chip)] text-[var(--atoms-ink)]": state().deviceMode === item.id,
                     }}
@@ -104,7 +104,7 @@ export function AtomsPreview() {
               <button
                 type="button"
                 onClick={() => preview.setAutoPreview(!state().autoPreview)}
-                class="rounded-full border border-[var(--atoms-line)] bg-white px-3 py-1.5 text-[13px] font-medium text-[var(--atoms-soft)] transition hover:text-[var(--atoms-ink)]"
+                class="rounded-full border border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] px-3 py-1.5 text-[13px] font-medium text-[var(--atoms-soft)] transition hover:text-[var(--atoms-ink)]"
               >
                 Auto {state().autoPreview ? "On" : "Off"}
               </button>
@@ -120,13 +120,13 @@ export function AtomsPreview() {
             overflow: "auto",
             padding: "1.25rem",
             background:
-              "radial-gradient(circle at top, rgba(63,110,245,0.08), transparent 42%), linear-gradient(180deg,#f5f2eb 0%,#f8f6f1 100%)",
+              "var(--atoms-shell-glow), linear-gradient(180deg, color-mix(in srgb, var(--atoms-surface) 92%, transparent), var(--atoms-page))",
           }}
         >
           <Show
             when={state().previewUrl}
             fallback={
-              <div class="grid h-full min-h-[22rem] place-items-center rounded-[32px] border border-dashed border-[var(--atoms-line)] bg-white/70 px-6 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.75)]">
+              <div class="grid h-full min-h-[22rem] place-items-center rounded-[32px] border border-dashed border-[var(--atoms-line)] bg-[var(--atoms-card)] px-6 text-center shadow-[var(--atoms-shadow-soft)]">
                 <div class="max-w-md">
                   <div class="text-[26px] font-semibold text-[var(--atoms-ink)]">Preview will appear here</div>
                   <div class="mt-3 text-[14px] leading-7 text-[var(--atoms-soft)]">
@@ -138,7 +138,7 @@ export function AtomsPreview() {
           >
             <div class="flex min-h-full items-start justify-center">
               <div
-                class="h-[min(100%,56rem)] min-h-[28rem] overflow-hidden rounded-[30px] border border-[var(--atoms-line)] bg-white shadow-[0_30px_80px_rgba(15,31,58,0.12)]"
+                class="h-[min(100%,56rem)] min-h-[28rem] overflow-hidden rounded-[30px] border border-[var(--atoms-line)] bg-[var(--atoms-card)] shadow-[var(--atoms-shadow)]"
                 style={{ width: frame().width }}
               >
                 <iframe
