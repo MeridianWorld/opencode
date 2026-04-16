@@ -629,7 +629,7 @@ export function MessageTimeline(props: {
             props.onMarkScrollGesture(e.currentTarget)
           }}
           onClick={props.onAutoScrollInteraction}
-          class="relative min-w-0 w-full h-full"
+          class="relative min-w-0 w-full h-full !overflow-visible [&>.scroll-view__viewport]:overflow-x-visible"
           style={{
             "--session-title-height": showHeader() ? "40px" : "0px",
             "--sticky-accordion-top": showHeader() ? "48px" : "0px",
@@ -899,7 +899,7 @@ export function MessageTimeline(props: {
             <div
               role="log"
               data-slot="session-turn-list"
-              class="flex flex-col items-start justify-start pb-16 transition-[margin]"
+              class="flex flex-col items-start justify-start overflow-x-visible pb-16 pr-2 transition-[margin]"
               classList={{
                 "w-full": true,
                 "md:max-w-200 md:mx-auto 2xl:max-w-[1000px]": props.centered,

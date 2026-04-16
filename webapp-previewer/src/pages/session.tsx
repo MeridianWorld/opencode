@@ -51,6 +51,7 @@ import {
   shouldFocusTerminalOnKeyDown,
 } from "@/pages/session/helpers"
 import { AtomsComposer } from "@/pages/session/atoms/atoms-composer"
+import { badge, pill, stage, toggle } from "@/pages/session/atoms/chrome"
 import { AtomsPreview } from "@/pages/session/atoms/atoms-preview"
 import { AtomsRail } from "@/pages/session/atoms/atoms-rail"
 import { AtomsShell } from "@/pages/session/atoms/atoms-shell"
@@ -1975,12 +1976,13 @@ export default function Page() {
             eyebrow="Conversation"
             title={projectName()}
             note={
-              <div class="rounded-full border border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
+              <div class={badge()}>
+                <span class="size-1.5 rounded-full bg-[var(--atoms-accent)]" />
                 {stageNote()}
               </div>
             }
           >
-            <div class="min-h-0 flex-1 overflow-hidden">
+            <div class={stage()}>
               <Switch>
                 <Match when={params.id}>
                   <Show
@@ -2113,7 +2115,8 @@ export default function Page() {
           <AtomsSide
             title={sideTitle()}
             note={
-              <div class="rounded-full border border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
+              <div class={badge()}>
+                <span class="size-1.5 rounded-full bg-[var(--atoms-accent)]" />
                 {sideNote()}
               </div>
             }
@@ -2136,22 +2139,14 @@ export default function Page() {
                         <div class="flex items-center gap-2 rounded-full border border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] p-1">
                           <button
                             type="button"
-                            class="rounded-full px-3 py-1 text-[12px] font-medium transition"
-                            classList={{
-                              "bg-[var(--atoms-chip)] text-[var(--atoms-ink)]": fileTreeTab() === "changes",
-                              "text-[var(--atoms-soft)]": fileTreeTab() !== "changes",
-                            }}
+                            class={toggle(fileTreeTab() === "changes")}
                             onClick={() => setFileTreeTab("changes")}
                           >
                             Changed
                           </button>
                           <button
                             type="button"
-                            class="rounded-full px-3 py-1 text-[12px] font-medium transition"
-                            classList={{
-                              "bg-[var(--atoms-chip)] text-[var(--atoms-ink)]": fileTreeTab() === "all",
-                              "text-[var(--atoms-soft)]": fileTreeTab() !== "all",
-                            }}
+                            class={toggle(fileTreeTab() === "all")}
                             onClick={() => setFileTreeTab("all")}
                           >
                             All
@@ -2210,13 +2205,7 @@ export default function Page() {
                                 <button
                                   type="button"
                                   onClick={() => tabs().setActive(tab)}
-                                  class="rounded-full border px-3 py-1.5 text-[13px] font-medium transition"
-                                  classList={{
-                                    "border-[var(--atoms-accent)] bg-[var(--atoms-chip)] text-[var(--atoms-ink)]":
-                                      activeFileTab() === tab,
-                                    "border-[var(--atoms-line)] bg-[var(--atoms-surface)] text-[var(--atoms-soft)] hover:text-[var(--atoms-ink)]":
-                                      activeFileTab() !== tab,
-                                  }}
+                                  class={pill(activeFileTab() === tab)}
                                 >
                                   {getFilename(path())}
                                 </button>

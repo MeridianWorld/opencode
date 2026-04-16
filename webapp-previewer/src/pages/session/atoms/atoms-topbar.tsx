@@ -1,4 +1,5 @@
 import { For, Show } from "solid-js"
+import { badge, pill } from "./chrome"
 
 export function AtomsTopbar(props: {
   title: string
@@ -25,7 +26,8 @@ export function AtomsTopbar(props: {
             <h3 class="truncate text-[30px] leading-none font-semibold text-[var(--atoms-ink)]">{props.title}</h3>
             <Show when={props.subtitle}>
               {(value) => (
-                <span class="rounded-full border border-[var(--atoms-line)] px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
+                <span class={badge()}>
+                  <span class="size-1.5 rounded-full bg-[var(--atoms-accent)]" />
                   {value()}
                 </span>
               )}
@@ -39,13 +41,7 @@ export function AtomsTopbar(props: {
               <button
                 type="button"
                 onClick={() => props.onSelect(item.id)}
-                class="rounded-full border px-4 py-2 text-[14px] font-medium transition"
-                classList={{
-                  "border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] text-[var(--atoms-soft)] hover:border-[var(--atoms-accent)] hover:text-[var(--atoms-ink)]":
-                    props.active !== item.id,
-                  "border-[var(--atoms-accent)] bg-[var(--atoms-chip)] text-[var(--atoms-ink)] shadow-[var(--atoms-shadow-soft)]":
-                    props.active === item.id,
-                }}
+                class={pill(props.active === item.id)}
               >
                 {item.label}
               </button>

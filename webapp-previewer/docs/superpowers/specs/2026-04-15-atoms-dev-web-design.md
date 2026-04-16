@@ -743,3 +743,65 @@ Validation completed in this step:
   - `bun test ./src/pages/session/atoms/atoms-preview-layout.test.ts`
   - `bun test --preload ./happydom.ts ./src/webapp-previewer/use-webapp-preview.test.ts`
   - `bun typecheck`
+
+### 2026-04-16 Record 21
+New user-reported issues:
+- The atoms-side buttons and pills still looked rough and inconsistent with the dark official OpenCode shell
+- The left conversation area still had clipped/crowded content; the user specifically pointed out that chat bubbles and related UI near the timeline edge were being cut off or covered
+
+My understanding after root-cause inspection:
+- The visible atoms controls were coming from multiple separate local styles:
+  - stage note badge
+  - side note badge
+  - topbar pills
+  - preview target buttons
+  - preview mode toggles
+  - composer hint chips
+  - file-tree segmented buttons
+  - editor file-tab pills
+- Because those styles were authored ad hoc in different files, they shared the same color tokens but not the same visual rhythm, spacing, or active/inactive treatment, which is why they read as "ugly buttons" rather than one intentional atoms-style chrome system
+- The clipping issue was not caused by the official message content itself
+- The more likely cause was the atoms wrapper around the official timeline:
+  - `src/pages/session.tsx` wrapped `MessageTimeline` in an `overflow-hidden` container
+  - `src/pages/session/message-timeline.tsx` rendered the official `ScrollView`, whose root CSS in `packages/ui/src/components/scroll-view.css` also defaults to `overflow: hidden`
+- That combination is risky because the official timeline includes sticky header chrome, message actions, comment chips, and tool cards that can legitimately extend to the content edge
+- In the atoms shell, those edge-adjacent elements could be visibly cropped even when the timeline data and message widths themselves were correct
+
+Choices made in this step:
+- Introduce a small shared atoms chrome helper:
+  - `src/pages/session/atoms/chrome.ts`
+- Use that helper to normalize the most visible atoms controls:
+  - stage note badge
+  - side note badge
+  - topbar subtitle badge
+  - topbar workspace tabs
+  - preview target buttons
+  - preview selected-file badge
+  - preview device toggles
+  - composer hint chips
+  - file-tree segmented buttons
+  - editor file-tab pills
+- Keep the styling pass deliberately scoped to the currently visible atoms shell instead of changing unrelated official UI
+- Relax the left-session wrapper so official timeline content has horizontal breathing room:
+  - replace the atoms stage content wrapper with a shared `overflow-y-hidden overflow-x-visible` layout rule
+  - make the atoms timeline `ScrollView` root explicitly `overflow-visible`
+  - make the `ScrollView` viewport explicitly `overflow-x-visible`
+  - add a small extra right gutter on the turn list
+
+Why this choice:
+- A shared atoms chrome helper prevents the UI from drifting back into multiple inconsistent pill/button styles as the shell evolves
+- The overflow change fixes the likely container-level cause instead of trying to patch individual message parts
+- This keeps the project aligned with the agreed direction:
+  - official OpenCode message/composer/review behavior inside
+  - atoms-style shell and presentation outside
+
+Validation completed in this step:
+- Red first:
+  - `bun test ./src/pages/session/atoms/chrome.test.ts`
+  - failed as expected with `Cannot find module './chrome'`
+- Green after the fix:
+  - `bun test ./src/pages/session/atoms/chrome.test.ts`
+  - `bun test ./src/pages/session/atoms/atoms-preview-layout.test.ts`
+  - `bun test --preload ./happydom.ts ./src/webapp-previewer/use-webapp-preview.test.ts`
+  - `bun typecheck`
+  - `bunx playwright test e2e/app/atoms-layout.spec.ts --workers=1 --reporter=line`

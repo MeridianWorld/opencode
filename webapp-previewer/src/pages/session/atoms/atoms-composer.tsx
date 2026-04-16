@@ -1,4 +1,5 @@
 import { For, Show, type ParentProps } from "solid-js"
+import { hint } from "./chrome"
 
 export function AtomsComposer(props: ParentProps<{ hints?: readonly string[] }>) {
   return (
@@ -15,7 +16,8 @@ export function AtomsComposer(props: ParentProps<{ hints?: readonly string[] }>)
         <div class="mb-3 flex flex-wrap gap-2">
           <For each={props.hints}>
             {(item) => (
-              <div class="rounded-full border border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
+              <div class={hint()}>
+                <span class="size-1.5 rounded-full bg-[var(--atoms-accent)]" />
                 {item}
               </div>
             )}

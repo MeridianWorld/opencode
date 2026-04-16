@@ -2,6 +2,7 @@ import { For, Show, createMemo } from "solid-js"
 import { getFilename } from "@opencode-ai/util/path"
 import { useWebAppPreview } from "@/webapp-previewer/use-webapp-preview"
 import { box } from "./atoms-preview-layout"
+import { badge, file as item, toggle } from "./chrome"
 
 const modes = [
   { id: "desktop", label: "Desktop", width: "100%" },
@@ -60,12 +61,7 @@ export function AtomsPreview() {
                     onClick={() => {
                       void preview.openPreview(file.path)
                     }}
-                    class="rounded-[22px] border px-4 py-3 text-left transition"
-                    classList={{
-                      "border-[var(--atoms-line)] bg-[var(--atoms-card)] hover:border-[var(--atoms-accent)]": state().filePath !== file.path,
-                      "border-[var(--atoms-accent)] bg-[var(--atoms-chip)] shadow-[var(--atoms-shadow-soft)]":
-                        state().filePath === file.path,
-                    }}
+                    class={item(state().filePath === file.path)}
                   >
                     <div class="text-[15px] font-medium text-[var(--atoms-ink)]">{file.name}</div>
                     <div class="mt-1 text-[12px] leading-5 text-[var(--atoms-soft)]">{file.relativePath}</div>
@@ -81,7 +77,8 @@ export function AtomsPreview() {
         <div style={{ padding: "0.75rem 1rem", "border-bottom": "1px solid var(--atoms-line)", "flex-shrink": 0 }}>
           <div class="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
             <div class="min-w-0">
-              <div class="truncate rounded-full border border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] px-3 py-1 text-[12px] font-medium text-[var(--atoms-soft)]">
+              <div class={`truncate ${badge()}`}>
+                <span class="size-1.5 shrink-0 rounded-full bg-[var(--atoms-accent)]" />
                 {state().filePath ? getFilename(state().filePath ?? undefined) : "Awaiting preview"}
               </div>
             </div>
@@ -91,12 +88,7 @@ export function AtomsPreview() {
                   <button
                     type="button"
                     onClick={() => preview.setDeviceMode(item.id)}
-                    class="rounded-full border px-3 py-1.5 text-[13px] font-medium transition"
-                    classList={{
-                      "border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] text-[var(--atoms-soft)] hover:text-[var(--atoms-ink)]":
-                        state().deviceMode !== item.id,
-                      "border-[var(--atoms-accent)] bg-[var(--atoms-chip)] text-[var(--atoms-ink)]": state().deviceMode === item.id,
-                    }}
+                    class={toggle(state().deviceMode === item.id)}
                   >
                     {item.label}
                   </button>
@@ -105,7 +97,7 @@ export function AtomsPreview() {
               <button
                 type="button"
                 onClick={() => preview.setAutoPreview(!state().autoPreview)}
-                class="rounded-full border border-[var(--atoms-line)] bg-[var(--atoms-card-muted)] px-3 py-1.5 text-[13px] font-medium text-[var(--atoms-soft)] transition hover:text-[var(--atoms-ink)]"
+                class={toggle(state().autoPreview)}
               >
                 Auto {state().autoPreview ? "On" : "Off"}
               </button>
