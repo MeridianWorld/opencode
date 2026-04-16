@@ -846,3 +846,238 @@ Why this choice:
 Validation completed in this step:
 - `Invoke-WebRequest http://localhost:3000`
 - `Invoke-WebRequest http://localhost:4096`
+
+## Approved Redesign Spec
+
+### 2026-04-16 Approved Scope
+This section records the redesign direction explicitly approved by the user after the earlier atoms-shell experiments were judged insufficient.
+
+Approved product target:
+- Rebuild the visible `atoms` session page so it feels like atoms rather than OpenCode
+- Keep OpenCode's frontend technology choices and backend-calling approach
+- Keep OpenCode-compatible session/state/sync/SDK patterns where they help preserve behavior
+- Do **not** keep OpenCode's visible session/workspace UI if it prevents atoms-style presentation
+
+Approved scope boundaries:
+- Phase 1 covers only the atoms-style **session page**
+- Phase 1 does **not** include the atoms landing page, templates page, login/register pages, or broader marketing site
+- The left chat area should use the **compatibility-first** path:
+  - preserve OpenCode message/session behavior
+  - replace the visible presentation with atoms-style UI
+- The right workspace should use the **atoms-first workbench** path:
+  - behave like a single atoms work surface
+  - do not preserve the current split-feeling `Preview / Editor / Files / Inspect` implementation
+
+Reason this scope was chosen:
+- The user wants the atoms conversation/workbench experience first
+- Earlier work that kept too much official OpenCode UI produced the wrong feel even when functionality improved
+- Restricting Phase 1 to the session page keeps the redesign tractable and easier to validate visually
+
+### Page Architecture
+The atoms session page will be rebuilt as a three-region layout:
+
+1. Left `Chat Workspace`
+- Primary conversation stage
+- Includes session header, conversation stream, decision/status cards, and composer
+- Must visually read as an AI builder workspace, not as OpenCode's stock chat/timeline page
+
+2. Center `Thin Rail`
+- Narrow atoms-style status rail
+- Carries lightweight mode/context cues rather than acting as a full IDE sidebar
+- Preserves the strong visual identity of the atoms workspace composition
+
+3. Right `Workbench`
+- Single continuous work surface
+- Supports multiple viewing modes without feeling like separate pages
+- Will host preview, files, editor, and inspect as views of one workbench rather than independent duplicated panes
+
+High-level layout rule:
+- The user should feel that the session page contains one conversation space and one workspace space, with the thin rail acting as the atoms-style bridge between them
+
+### Left Chat Workspace
+The left side will preserve OpenCode session behavior but replace the visible presentation layer.
+
+Behavior preserved:
+- Session/message ordering
+- Message parts / tool parts / status state
+- Question-and-answer flow
+- Follow-up submission path
+- Composer submit semantics
+- Existing SDK/sync/session sources of truth
+
+Presentation replaced:
+- Official `MessageTimeline` look and feel
+- Official `SessionComposerRegion` visible chrome
+- Official tool/status log presentation where it makes the page feel like OpenCode
+
+Left-side component layers:
+1. `Session Header`
+- Project/session identity
+- Lightweight metadata such as active status or turn count
+- Minimal actions only
+
+2. `Conversation Stream`
+- Atoms-style user and assistant message presentation
+- Cleaner spacing and stronger reading hierarchy than the current OpenCode timeline shell
+
+3. `Tool / Status Cards`
+- OpenCode tool parts and machine-state events are preserved, but presented as condensed work-log / progress cards
+- They should support comprehension without dominating the main dialogue flow
+
+4. `Decision Cards`
+- Question parts should be rendered as obvious decision checkpoints
+- They should feel like "the agent is asking for approval" rather than like raw internal protocol output
+
+5. `Composer`
+- Atoms-style prompt panel
+- Still wired to the OpenCode submission path
+
+Mapping rules for Phase 1:
+- User text -> atoms-style user message block
+- Assistant text -> atoms-style assistant message block
+- Tool parts -> compact work-log cards
+- Reasoning / long internal progress -> reduced or summarized status treatment by default
+- Question parts -> first-class decision cards
+- Diff / file changes -> summary only on the left; detailed inspection moves to the right workbench
+- Errors -> clear failure cards without falling back to IDE-looking red utility panels
+
+Why this mapping was chosen:
+- It keeps OpenCode's real behavior and backend compatibility
+- It avoids turning the left side into a debug console
+- It better matches the atoms feeling of "AI is building with you" instead of "IDE logs are streaming past you"
+
+### Right Workbench
+The right side becomes a single atoms-style workbench instead of the current effectively duplicated `Files` + `Editor` composition.
+
+Workbench structure:
+1. `Workbench Header`
+- Current object/context label
+- Current mode label
+- Minimal atoms-style controls
+
+2. `Mode Switch`
+- `Preview`
+- `Files`
+- `Editor`
+- `Inspect`
+
+3. `Workbench Canvas`
+- Shared surface for all modes
+- Switching modes changes the perspective on the same work area rather than navigating to separate panels
+
+Mode semantics for Phase 1:
+
+`Preview`
+- Focuses on rendered HTML/web output
+- Device mode and current entry target stay close to the canvas
+- Uses the existing backend `/view` path and preview logic
+
+`Files`
+- Dedicated resource-browsing mode
+- Shows workspace tree and file discovery
+- Opening a file should transition meaningfully into editor usage rather than duplicating editor content in place
+
+`Editor`
+- Dedicated open-file editing mode
+- Must have a real file-tab strip
+- Tabs must support:
+  - active-file switching
+  - close buttons
+  - empty state when no files are open
+- This explicitly fixes the user-reported issue that opened files had no close affordance
+
+`Inspect`
+- Shows change summaries, generated diffs, or validation/inspection results
+- Serves as the place for deeper change review rather than crowding the left conversation stream
+
+Design rule:
+- `Files` and `Editor` may share underlying open-file state, but they must not feel like the same visible screen with different labels
+
+### Data Flow and Technical Strategy
+The redesign keeps OpenCode's technology and backend-integration model while replacing the visible UI layer.
+
+Preserve:
+- Solid + Vite app structure
+- Context/provider model already used by the repo
+- `useSDK`, `useSync`, session/file/layout contexts, and preview/backend integrations where appropriate
+- Existing backend routes such as preview `/view/...`
+- Official session/file/tree/editor state sources when they are usable without inheriting the wrong visible UI
+
+Replace or wrap:
+- Official visible session presentation
+- Official visible composer chrome
+- Any direct UI reuse that causes the page to visually read as OpenCode instead of atoms
+
+Implementation principle:
+- Preserve data plumbing
+- Replace interaction/presentation surfaces
+
+### Error Handling and Fallbacks
+Because Phase 1 is a redesign on top of existing OpenCode behavior, failures should degrade visibly but not break the session.
+
+Required fallback behavior:
+- If a rare message part is not yet atoms-native, render it in a safe compatibility block instead of dropping it
+- If no file is open in `Editor`, show a clear atoms-style empty state
+- If no preview target exists in `Preview`, show a clear atoms-style preview empty state
+- If no diffs/check results exist in `Inspect`, show a clear atoms-style inspect empty state
+- If preview path or backend rendering fails, keep the workbench stable and surface the error in the workbench rather than silently doing nothing
+
+### Phase 1 Deliverables
+Phase 1 is complete when all of the following are true:
+- The session page is recognizably atoms-like in layout and presentation
+- The left side no longer visually resembles stock OpenCode chat/timeline UI
+- The center thin rail is present and meaningful
+- The right side behaves like a single workbench
+- `Files` and `Editor` no longer feel duplicated
+- `Editor` supports open-file tabs with close buttons
+- `Preview` still works against the official backend preview route
+- `Inspect` can show meaningful change/inspection output
+- The implementation keeps using OpenCode-compatible tech and backend-calling patterns
+
+Explicitly out of scope for Phase 1:
+- Atoms landing page
+- Atoms template browser
+- Atoms auth pages
+- Full visual drag editor
+- Advanced multi-column editor workflows
+- Full micro-interaction parity with the production atoms site
+
+### Validation Plan
+Validation for this redesign should combine structure, behavior, and visual comparison.
+
+Required validation categories:
+1. Structure validation
+- Confirm the page renders as the intended three-region atoms session layout
+
+2. Main-path behavior validation
+- Enter or create a session
+- Continue chatting on the left
+- Open preview targets on the right
+- Browse files in `Files`
+- Open files in `Editor`
+- Close files from the editor tab strip
+- Review changes in `Inspect`
+
+3. Regression validation
+- Existing preview path tests continue to pass
+- New atoms workbench / tab / layout tests are added where stable
+- `bun typecheck` passes when the implementation phase begins
+
+4. Visual validation
+- Compare the rebuilt session page against atoms references and user-provided screenshots
+- Judge success primarily by:
+  - left chat workspace feel
+  - center rail feel
+  - right workbench coherence
+  - removal of the current OpenCode-like duplication
+
+### Spec Self-Review
+Self-review completed for this approved spec:
+- Placeholder scan:
+  - no `TODO`, `TBD`, or intentionally unresolved placeholders remain in the approved Phase 1 definition
+- Internal consistency:
+  - the scope, layout, and technical strategy all align around "keep OpenCode plumbing, replace visible UI"
+- Scope check:
+  - the work is constrained to the session page only, which is large but still a coherent implementation target
+- Ambiguity check:
+  - the previously ambiguous question of whether to preserve OpenCode visuals has been resolved explicitly: preserve behavior and plumbing, not visible stock UI
