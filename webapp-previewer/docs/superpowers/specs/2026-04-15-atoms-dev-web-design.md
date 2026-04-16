@@ -1117,3 +1117,118 @@ Why this choice:
 Outcome:
 - The implementation plan now exists on disk under `webapp-previewer/docs/superpowers/plans`
 - The project is ready to move from planning into execution
+
+### 2026-04-16 Record 24
+New user choice:
+- The user chose execution option `1`, meaning the approved plan should be executed with the subagent-driven workflow rather than inline implementation
+
+My understanding:
+- The project should now move task-by-task through the implementation plan with narrow write scopes and review checkpoints
+- Because the user explicitly approved the subagent route, it is appropriate to use delegated task execution for each planned implementation slice
+
+Environment/setup work attempted before Task 1:
+- Read the subagent-driven execution guidance and the git-worktree setup guidance
+- Chose the project-local `.worktrees` location because:
+  - the repo already ignores `.worktrees` in `.gitignore`
+  - that matches the repo-local preference without needing to ask the user for another location
+- Created a worktree at:
+  - `D:\github_repo\opencode\.worktrees\atoms-session-page`
+- Created a new branch for isolated execution:
+  - `codex/atoms-session-page`
+
+Errors discovered during fresh-worktree baseline setup:
+- Running `bun typecheck` inside the worktree failed immediately with widespread missing-module resolution errors
+- Running targeted atoms tests inside the worktree failed because modules such as `@happy-dom/global-registrator` could not be resolved
+- Attempting `bun install --frozen-lockfile` inside the worktree failed on Windows because a native dependency build was triggered:
+  - `tree-sitter-powershell`
+- The native build failed because this machine does not currently have the required Visual Studio C++ toolset installed
+
+Handling choice made:
+- Do not block atoms implementation on local machine toolchain repair
+- Do not keep retrying a broken fresh-worktree bootstrap path
+- Continue with the subagent-driven workflow using subagent-isolated task execution and integrate changes on the existing feature branch/workspace instead
+
+Why this choice:
+- The user asked to continue implementation, not to spend the session repairing machine-level C++ tooling
+- The failure is environmental and orthogonal to the atoms session-page redesign itself
+- The delegated subagent workflow still preserves practical isolation per task even though the repository-level fresh worktree baseline could not be made healthy on this Windows machine
+
+Execution status after this step:
+- Task 1 has been dispatched:
+  - expand atoms session state for a single workbench
+- Task 1 write scope is intentionally limited to:
+  - `webapp-previewer/src/pages/session/atoms/state.ts`
+  - `webapp-previewer/src/pages/session/atoms/state.test.ts`
+
+### 2026-04-16 Record 25
+Task 1 execution result:
+- Task 1 has now completed and passed both the spec-compliance review and the follow-up code-quality review
+
+New error discovered during subagent dispatch:
+- The first Task 1 implementer dispatch failed before execution started because the requested model was unsupported for the current account:
+  - `gpt-5.1-codex-mini`
+
+Handling choice made:
+- Do not restart the workflow manually
+- Re-dispatch the same narrow Task 1 implementation request with a supported small model instead:
+  - `gpt-5.4-mini`
+
+Why this choice:
+- The failure was about account/model availability, not about the task itself
+- Re-dispatching with a supported small model preserved the subagent-driven workflow without expanding task scope or losing review discipline
+
+Task 1 implementation delivered:
+- `webapp-previewer/src/pages/session/atoms/state.ts`
+  - added `AtomsMode`
+  - kept `AtomsView` as a compatibility alias
+  - replaced the old `view` state with:
+    - `mode`
+    - `setMode`
+    - `fileTabs`
+    - `activeFile`
+    - `openFile(path)`
+    - `activateFile(path)`
+    - `closeFile(path)`
+  - preserved:
+    - `rail`
+    - `side`
+    - `toggleRail`
+    - `toggleSide`
+- `webapp-previewer/src/pages/session/atoms/state.test.ts`
+  - expanded coverage for:
+    - default mode
+    - unique file tabs
+    - active-file switching
+    - closing inactive tabs
+    - closing active tabs
+    - rail/side toggle preservation
+
+Quality issue discovered during review:
+- First code-quality review found a real state bug:
+  - closing a non-active tab incorrectly changed `activeFile` to the last remaining tab
+
+Handling choice made:
+- Send the task back to the same implementer subagent with a narrow follow-up patch
+- Require updated tests that distinguish:
+  - closing an inactive tab
+  - closing the active tab
+
+Additional reviewer concern and decision:
+- The first quality review also suggested that closing the last tab should probably force `mode()` away from `editor`
+- I explicitly chose **not** to make that change in Task 1
+
+Why this choice:
+- The approved later design already requires the `Editor` view to support an empty state when no files are open
+- Therefore `mode() === "editor"` with no active file is a valid planned state, not necessarily a bug
+- The second quality review agreed with this interpretation and approved the task after the real `closeFile()` issue was fixed
+
+Validation completed in this step:
+- `bun test ./src/pages/session/atoms/state.test.ts`
+- Result:
+  - `2 pass`
+  - `0 fail`
+
+Task status after this step:
+- Task 1 is complete
+- The project can move on to Task 2:
+  - create the atoms page composition root and shell skeleton
