@@ -517,3 +517,16 @@ Current status after this step:
 - Atoms-style session shell now renders around the routed session
 - The session still uses official prompt, timeline, review, and file behavior internally
 - The global opencode chrome is still present around the session route, so matching the full atoms.dev site frame is still a remaining task
+### 2026-04-16 Record 14
+User request:
+- Start the current `webapp-previewer` implementation so it can be inspected in the browser
+
+My understanding:
+- The immediate goal is not a new code change, but launching the current backend and frontend together
+- I should use the documented local start flow under `webapp-previewer`, verify the URLs respond, and then hand over the local address
+
+Choice made:
+- Follow the existing `QUICKSTART.md` flow:
+  - backend on `http://localhost:4096`
+  - frontend on `http://localhost:5173`
+- Start them as detached local processes so the app stays up after this message
