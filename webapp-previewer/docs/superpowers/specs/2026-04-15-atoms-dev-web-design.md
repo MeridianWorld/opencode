@@ -2133,3 +2133,37 @@ Current decision:
 - `Task 2` is complete
 - Move to `Task 3`
   - rebuild the left side into a true Atoms session panel
+
+### 2026-04-17 Record 42
+Pre-Task 3 cleanup to unblock `session.tsx` work:
+- Before starting `Task 3`, I checked why `src/pages/session.tsx` was still dirty.
+- Result:
+  - the remaining local diff was not unrelated user work
+  - it was the previously completed preview fix that had never been committed on this branch
+
+Files in the carry-over preview fix:
+- `src/webapp-previewer/use-webapp-preview.ts`
+- `src/webapp-previewer/use-webapp-preview.test.ts`
+- `src/pages/session.tsx`
+- `e2e/app/atoms-preview.spec.ts`
+
+What that carry-over fix does:
+- default the preview backend to the active SDK url instead of a hardcoded localhost preview backend
+- export shared HTML target candidates so the preview detector and session badge count stay aligned
+- make the preview e2e check target the right HTML entry and assert visible iframe content
+
+Why I chose to commit it now:
+- `Task 3` needs to edit `src/pages/session.tsx`
+- leaving this uncommitted preview fix in the working tree would make the left-panel redesign harder to isolate and review cleanly
+
+Fresh verification for the carry-over preview fix:
+- `bun test --preload ./happydom.ts ./src/webapp-previewer/use-webapp-preview.test.ts`
+  - passed
+- `bun typecheck`
+  - passed
+- `bun x playwright test e2e/app/atoms-preview.spec.ts --workers=1 --reporter=line`
+  - passed
+
+Current decision:
+- commit the carry-over preview fix first
+- then start `Task 3` on a cleaner `session.tsx` base

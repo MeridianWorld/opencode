@@ -71,6 +71,7 @@ import { Persist, persisted } from "@/utils/persist"
 import { extractPromptFromParts } from "@/utils/prompt"
 import { same } from "@/utils/same"
 import { formatServerError } from "@/utils/server-errors"
+import { HTML_TARGETS, locate } from "@/webapp-previewer/use-webapp-preview"
 
 const emptyUserMessages: UserMessage[] = []
 type FollowupItem = FollowupDraft & { id: string }
@@ -1970,7 +1971,26 @@ export default function Page() {
   })
 
   const projectName = createMemo(() => getFilename(sync.project?.worktree ?? sdk.directory))
-  const previewTargets = createMemo(() => diffs().filter((diff) => /\.(html?)$/i.test(diff.file)).length)
+  const previewTargets = createMemo(() => {
+    const dir = sync.directory || sdk.directory
+    if (!dir) return 0
+    const seen = new Set<string>()
+    const add = (file: string) => {
+      const next = locate(dir, file)
+      if (!/\.(html?)$/i.test(next.path)) return
+      seen.add(next.relative)
+    }
+
+    Object.values(sync.data.session_diff)
+      .flat()
+      .forEach((diff) => {
+        if (!diff?.file) return
+        add(diff.file)
+      })
+
+    HTML_TARGETS.forEach(add)
+    return seen.size
+  })
   const railItems = createMemo(
     () =>
       [
@@ -2026,7 +2046,7 @@ export default function Page() {
   )
 
   return (
-    <div class="relative bg-background-base size-full overflow-hidden flex flex-col">
+    <div class="relative size-full overflow-hidden flex flex-col bg-[var(--atoms-page)]">
       <AtomsPage
         chat={
           <>

@@ -1,4 +1,5 @@
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js"
+import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
 import type { DetectedFile, DeviceMode, WebAppPreviewConfig, WebAppPreviewState } from "./types"
 
@@ -12,6 +13,15 @@ const DEFAULT_STATE: WebAppPreviewState = {
 }
 
 const WEB_APP_EXTENSIONS = [".html", ".htm"]
+export const HTML_TARGETS = [
+  "index.html",
+  "app.html",
+  "main.html",
+  "public/index.html",
+  "dist/index.html",
+  "build/index.html",
+  "src/index.html",
+]
 
 const isAbsolute = (value: string) => /^[A-Za-z]:[\\/]/.test(value)
 const slash = (value: string) => value.replace(/\\/g, "/")
@@ -32,13 +42,14 @@ export function href(base: string, dir: string, file: string) {
 }
 
 export function useWebAppPreview(initialConfig?: Partial<WebAppPreviewConfig>) {
+  const sdk = useSDK()
   const sync = useSync()
   const [state, setState] = createSignal<WebAppPreviewState>({
     ...DEFAULT_STATE,
     ...initialConfig,
   })
   const [config, setConfig] = createSignal<WebAppPreviewConfig>({
-    backendUrl: "http://localhost:4096",
+    backendUrl: initialConfig?.backendUrl ?? sdk.url ?? "http://localhost:4096",
     projectDirectory: sync.directory || "",
     autoPreview: true,
     ...initialConfig,
@@ -88,15 +99,7 @@ export function useWebAppPreview(initialConfig?: Partial<WebAppPreviewConfig>) {
         add(diff.file, true)
       })
 
-    ;[
-      "index.html",
-      "app.html",
-      "main.html",
-      "public/index.html",
-      "dist/index.html",
-      "build/index.html",
-      "src/index.html",
-    ].forEach((value) => add(value, false))
+    HTML_TARGETS.forEach((value) => add(value, false))
 
     return files
   })

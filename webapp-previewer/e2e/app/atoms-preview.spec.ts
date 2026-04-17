@@ -27,10 +27,12 @@ test("opens a detected html target inside the atoms preview canvas", async ({ pa
   const preview = page.locator('[data-component="atoms-preview"]')
   await expect(preview).toBeVisible()
   await expect(preview.getByRole("button", { name: "Desktop" })).toBeVisible()
-  await expect(preview.getByRole("button", { name: /index\.html/i })).toBeVisible()
+  await expect(page.getByText("7 targets").first()).toBeVisible()
+  const entry = preview.getByRole("button", { name: /^index\.html index\.html$/i })
+  await expect(entry).toBeVisible()
 
-  await preview.getByRole("button", { name: /index\.html/i }).click()
+  await entry.click()
 
   await expect(preview.locator('iframe[title="Atoms preview"]')).toBeVisible()
-  await expect(preview.getByText("index.html", { exact: true })).toBeVisible()
+  await expect(page.frameLocator('[data-component="atoms-preview"] iframe[title="Atoms preview"]').getByText("preview smoke")).toBeVisible()
 })
