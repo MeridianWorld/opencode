@@ -2016,3 +2016,46 @@ Current decision:
 - `Task 1` is complete
 - Move to `Task 2`
   - rebuild the visible session work-page skeleton so the page reads like Atoms at first glance instead of an OpenCode page with a themed insert
+
+### 2026-04-17 Record 39
+Task 2 first-pass review:
+- The Task 2 shell/frame commit landed:
+  - `0d2d442f4`
+  - `feat: rebuild atoms work-page frame`
+- The first-pass result materially improved:
+  - three-region shell proportions
+  - mode rail framing
+  - removal of the explicit hybrid helper copy
+
+What changed in that pass:
+- Added:
+  - `e2e/app/atoms-workbench-shell.spec.ts`
+- Updated shell/frame-facing components:
+  - `src/pages/session/atoms/atoms-shell.tsx`
+  - `src/pages/session/atoms/atoms-rail.tsx`
+  - `src/pages/session/atoms/atoms-topbar.tsx`
+- Also updated left-panel shell copy to remove hybrid language:
+  - `src/pages/session/atoms/atoms-stage.tsx`
+  - `src/pages/session/atoms/atoms-chat.tsx`
+  - `src/pages/session/atoms/atoms-chat-header.tsx`
+
+Task 2 review result:
+- Spec review did not fully approve the task yet.
+
+New issue discovered during Task 2 spec review:
+- `Issue C: visible OpenCode branding still leaks through the left session panel`
+  - Discovery:
+    - the spec reviewer found that assistant message cards still display `OpenCode`
+  - Root cause:
+    - `src/pages/session/atoms/atoms-message.tsx` hardcodes the assistant label as `OpenCode`
+  - Why it matters:
+    - even with a better shell, this label keeps the page reading like an OpenCode page with atoms styling
+    - that directly conflicts with the approved page goal for Task 2
+  - Handling decision:
+    - extend the new `atoms-workbench-shell` regression so visible `OpenCode` branding fails the test
+    - then replace the assistant label with a neutral Atoms-safe builder label
+
+Current next step:
+- Send `Issue C` back to the same Task 2 implementer
+- close the remaining visible OpenCode branding leak
+- re-run Task 2 spec review after that focused fix
