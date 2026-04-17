@@ -1768,3 +1768,29 @@ Clarification I need to communicate:
 Why this distinction matters:
 - If we only say `session外壳`, that describes the design target
 - If we say `session route shell`, that describes the engineering cut point where we can replace the UI without rewriting the whole app routing system
+
+### 2026-04-17 Record 34
+Latest scope correction from the user:
+- The user explicitly clarified:
+  - they only care about the working page where:
+    - the left side is the session / conversation area
+    - the right side is the workbench with previewer / editor
+  - they do **not** care about other pages right now
+
+My updated understanding:
+- The redesign target is now tightly scoped to the main working session page only
+- Success does **not** require redesigning:
+  - home page
+  - non-session routes
+  - unrelated global pages
+- Success **does** require that the actual session work page feels like Atoms:
+  - left session area
+  - center rail / navigation if present
+  - right workbench area with preview / editor / files / inspect
+
+Engineering consequence:
+- I should stop discussing broader app-wide layout replacement
+- The correct implementation target is:
+  - the session work page only
+  - with OpenCode contexts and backend integrations preserved underneath
+- Future design proposals should be judged only against that page
