@@ -15,7 +15,7 @@ export function AtomsMessage(props: {
   return (
     <article class={bubble(props.row.kind)}>
       <div class="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--atoms-soft)]">
-        {props.row.kind === "user" ? "You" : "OpenCode"}
+        {props.row.kind === "user" ? "You" : "Assistant"}
       </div>
       <div class="mt-2 whitespace-pre-wrap text-[14px] leading-7">{props.row.text}</div>
       {props.row.kind === "assistant" && props.row.error ? (

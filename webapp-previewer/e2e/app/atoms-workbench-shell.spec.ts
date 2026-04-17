@@ -19,6 +19,7 @@ test("renders the atoms work-page frame with three persistent regions", async ({
     await expect(chat).toBeVisible()
     await expect(rail).toBeVisible()
     await expect(workbench).toBeVisible()
+    await expect(chat.locator("article").getByText(/^OpenCode$/i)).toHaveCount(0)
 
     await expect(page.getByText(/the left conversation stays official/i)).toHaveCount(0)
     await expect(page.getByText(/OpenCode page with themed inserts/i)).toHaveCount(0)
