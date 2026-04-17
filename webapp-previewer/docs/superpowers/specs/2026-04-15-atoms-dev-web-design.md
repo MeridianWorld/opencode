@@ -1915,3 +1915,104 @@ Success criteria for the redesign:
 - A user looking only at the working page should recognize it as an Atoms-style builder workspace rather than an OpenCode page with themed inserts
 - The left session panel and right workbench should feel like two halves of one builder product
 - The underlying data and backend behavior should still remain compatible with the official OpenCode frontend architecture
+
+### 2026-04-17 Record 37
+Latest user response:
+- The user confirmed the current execution direction and asked me to move fast:
+  - `确认，做吧，敏捷开发，敏捷实现`
+
+Current implementation checkpoint:
+- I started executing the approved session-only redesign plan.
+- `Task 1` was implemented first:
+  - isolate the session route from the default OpenCode page chrome
+  - keep the default shell on non-session routes
+
+Task 1 implementation result:
+- Commit landed on the current branch:
+  - `5100515ef`
+  - `feat: isolate atoms session viewport`
+- Files changed:
+  - `src/pages/layout.tsx`
+  - `e2e/app/atoms-session-shell.spec.ts`
+
+Task 1 validation result:
+- The new session-route shell test passed.
+- `bun typecheck` passed.
+- A non-session smoke test also passed.
+
+New issues discovered during review:
+- `Issue A: session route lost titlebar-owned affordances`
+  - Discovery:
+    - code-quality review found that hiding `Titlebar` for session routes also removed browser-history commands and the desktop drag / window-control region
+  - Understanding:
+    - the current `layout.tsx` session gate bypasses `Titlebar` entirely
+    - `src/components/titlebar.tsx` is still the place that:
+      - registers `common.goBack`
+      - registers `common.goForward`
+      - exposes the desktop drag region and window control mount point
+  - Handling decision:
+    - do not restore the full default OpenCode titlebar
+    - instead, add back the missing session-page affordances in a stripped-down session-safe way so the page stays on the Atoms path
+
+- `Issue B: test coverage only proved the session positive case`
+  - Discovery:
+    - review also found that the new regression only proved that the session route hides the default shell
+  - Understanding:
+    - the route gate is pathname-based, so we need an explicit non-session guard
+    - existing home coverage did not directly lock the session-vs-non-session shell boundary
+  - Handling decision:
+    - extend the targeted shell regression so it also proves a normal route still keeps the default shell
+
+Current next step:
+- Send the review findings back to the same implementer agent
+- Fix both issues before moving on to `Task 2`
+- Keep documenting each discovered issue, root cause, and handling choice in this file
+
+### 2026-04-17 Record 38
+Task 1 closeout after follow-up fix:
+- The same implementer agent applied a follow-up fix:
+  - `0c8858780`
+  - `fix: preserve session titlebar affordances`
+- Files changed in the follow-up:
+  - `src/pages/layout.tsx`
+  - `src/components/titlebar.tsx`
+  - `e2e/app/atoms-session-shell.spec.ts`
+
+How the two review findings were handled:
+- `Issue A: session route lost titlebar-owned affordances`
+  - Handling:
+    - keep `Titlebar` mounted on session routes
+    - add a `session` mode to `Titlebar`
+    - in `session` mode:
+      - keep back / forward history affordances
+      - keep desktop drag / window control support
+      - suppress the default sidebar toggle and new-session chrome
+  - Result:
+    - the session route no longer loses the required navigation / window affordances
+    - the page still avoids restoring the default full OpenCode shell
+
+- `Issue B: non-session shell regression coverage was missing`
+  - Handling:
+    - extend `atoms-session-shell.spec.ts`
+    - assert:
+      - session route keeps history affordances but hides default shell chrome
+      - `/` still shows the default non-session shell
+  - Result:
+    - the shell boundary now has an explicit positive session case and an explicit positive non-session case
+
+Verification run for the follow-up:
+- `bun x playwright test e2e/app/atoms-session-shell.spec.ts --workers=1 --reporter=line`
+  - passed
+- `bun typecheck`
+  - passed
+
+Review status:
+- Spec review:
+  - approved
+- Code-quality review after the follow-up:
+  - approved
+
+Current decision:
+- `Task 1` is complete
+- Move to `Task 2`
+  - rebuild the visible session work-page skeleton so the page reads like Atoms at first glance instead of an OpenCode page with a themed insert
