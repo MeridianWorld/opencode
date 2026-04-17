@@ -1594,3 +1594,148 @@ Task status after this step:
 - Task 5 is complete
 - The project can move on to Task 6:
   - re-integrate preview / inspect regressions and run final atoms session verification
+
+### 2026-04-17 Record 30
+Task 6 execution result:
+- Task 6 has now completed its preview re-integration and final focused validation
+- The atoms preview no longer assumes a hardcoded local backend origin
+- The workspace header target count now matches the same HTML candidate set used by the preview pane
+- The focused preview regression now verifies the actual iframe content instead of a brittle duplicate filename locator
+
+Task 6 implementation delivered:
+- `webapp-previewer/src/webapp-previewer/use-webapp-preview.ts`
+  - now reads the default preview backend origin from `useSDK().url`
+  - keeps explicit `backendUrl` overrides working
+  - exports the shared `HTML_TARGETS` seed list so preview detection and workspace metadata stay aligned
+- `webapp-previewer/src/webapp-previewer/use-webapp-preview.test.ts`
+  - added a focused RED/GREEN unit test proving the preview backend defaults to the active SDK URL
+  - added a companion test proving explicit overrides still win
+- `webapp-previewer/src/pages/session.tsx`
+  - replaced the old preview target count based only on review diffs
+  - now computes the count from the same candidate set the preview hook exposes:
+    - HTML files from `sync.data.session_diff`
+    - shared fallback targets from `HTML_TARGETS`
+- `webapp-previewer/e2e/app/atoms-preview.spec.ts`
+  - narrowed the target button locator to the unique `index.html index.html` entry
+  - now asserts the iframe renders `preview smoke`
+  - added coverage that the atoms workspace count badge no longer stays stuck at `0 targets`
+
+New errors discovered in this step:
+- First root-cause bug:
+  - `useWebAppPreview()` still hardcoded `backendUrl: "http://localhost:4096"`
+  - In focused Playwright runs, the app frontend was talking to an isolated backend URL instead of that hardcoded origin
+  - That mismatch explained the earlier symptom where HTML targets appeared but the preview stayed at `Awaiting preview`
+- Second debugging trap:
+  - one Playwright run was accidentally reusing a stale local Vite server on port `3000`
+  - That produced misleading failures until I moved the focused browser regression onto a clean port (`3100`)
+- Third focused test bug:
+  - after the backend-origin fix, the preview itself loaded correctly but the focused Playwright locator `/index\.html/i` matched multiple target buttons
+  - This was a test bug, not a preview rendering bug
+- Fourth UI consistency bug:
+  - the top-level atoms workspace badge still showed `0 targets` even when the preview pane listed fallback HTML targets
+
+Handling choices made in this step:
+- I kept the preview fix narrow and aligned with the official web frontend architecture:
+  - prefer `useSDK().url`
+  - do not introduce a second preview backend configuration source
+- I chose to share the HTML seed list instead of duplicating it in multiple places
+  - this keeps preview candidate discovery and workspace metadata in sync
+- I did not kill the user's existing local dev server for verification
+  - instead I ran the focused Playwright regression on a clean port so verification would not interfere with the live session they were using
+- I tightened the e2e to assert actual iframe content instead of relying on duplicate visible filename text
+
+TDD and debugging history in this step:
+- RED:
+  - `use-webapp-preview.test.ts` failed with:
+    - expected preview URL base `http://127.0.0.1:4321`
+    - received `http://localhost:4096`
+- GREEN:
+  - after switching the default preview origin to `useSDK().url`, the focused unit test passed
+- Browser verification:
+  - the first clean browser rerun showed the preview iframe was already rendering `preview smoke`
+  - that evidence narrowed the remaining failure down to:
+    - ambiguous target-button matching in the test
+    - stale `0 targets` workspace metadata
+
+Final validation completed in this step:
+- `bun test --preload ./happydom.ts ./src/webapp-previewer/use-webapp-preview.test.ts ./src/pages/session/atoms/state.test.ts ./src/pages/session/atoms/atoms-thread.test.ts ./src/pages/session/atoms/atoms-preview-layout.test.ts`
+- Result:
+  - `15 pass`
+  - `0 fail`
+- `bun typecheck`
+- Result:
+  - passed
+- `bun x playwright test e2e/app/atoms-preview.spec.ts --workers=1 --reporter=list`
+- Execution note:
+  - run on clean port `3100`
+- Result:
+  - passed
+
+Review outcome:
+- Task 6 spec review reported:
+  - no spec compliance gaps
+- Task 6 code-quality review reported:
+  - no actionable bugs or convention issues in the diff
+  - the reviewer noted they could not run `bun` in their own shell because it was not on `PATH`, but main-thread verification covered that gap
+
+Task status after this step:
+- Task 6 is complete
+- The six-step atoms session page implementation plan is now complete
+
+### 2026-04-17 Record 31
+New user correction received after Task 6:
+- The current page still looks too much like OpenCode, especially on the left side
+- The user explicitly rejected the previous compromise of keeping the official OpenCode shell visually intact
+- The new clarified requirement is:
+  - do **not** preserve the OpenCode appearance
+  - only preserve the official OpenCode frontend architecture for:
+    - SDK usage
+    - session / sync / file contexts
+    - backend calling patterns
+    - overall technical stack
+  - the full session experience should visually and interactively resemble Atoms much more closely
+
+My updated understanding:
+- The remaining mismatch is broader than a few message cards
+- The current implementation still inherits too much OpenCode chrome from higher layers:
+  - the global titlebar
+  - the project / session sidebar shell
+  - the left chat-stage framing copy and empty states
+- Because of that, the current page reads as:
+  - OpenCode app shell
+  - with an atoms-themed panel inserted inside it
+- That is not the target
+
+Handling choice made after this correction:
+- I am treating this as a new design-alignment task, not as a small polish pass
+- The next implementation should move from:
+  - `atoms inside OpenCode shell`
+  to:
+  - `atoms-style session shell backed by OpenCode state and backend integrations`
+
+### 2026-04-17 Record 32
+Latest user confirmation:
+- I asked whether I should directly take over the entire `session` route chrome, including:
+  - the top titlebar
+  - the left project / session sidebar
+  - the outer chat-stage shell
+- while still preserving OpenCode's:
+  - state management
+  - SDK usage
+  - backend calling patterns
+  - technical stack
+- The user explicitly confirmed:
+  - `对`
+
+Updated requirement after that confirmation:
+- The redesign scope is now the full visible session shell, not just the inner workbench panels
+- The target is:
+  - Atoms-like visual and interaction shell across the whole session page
+  - OpenCode-compatible data flow underneath
+
+Implementation consequence:
+- Future work should not treat `Titlebar`, the default project/session sidebar, or the current left chat framing as fixed UI
+- Those layers are now valid redesign targets as long as:
+  - backend integration stays official
+  - session/file/sync contexts stay official
+  - we do not fork the backend behavior
