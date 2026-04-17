@@ -41,3 +41,17 @@ test("renders the atoms work-page frame with three persistent regions", async ({
     expect(mid!.width).toBeLessThan(right!.width)
   })
 })
+
+test("reflows the atoms shell on smaller desktop widths without clipping the workbench", async ({ page, sdk, gotoSession }) => {
+  await page.setViewportSize({ width: 1024, height: 1003 })
+
+  await withSession(sdk, `atoms shell ${Date.now()}`, async (session) => {
+    await gotoSession(session.id)
+
+    const shell = page.locator('[data-component="atoms-shell"]')
+    const box = await shell.boundingBox()
+
+    expect(box).not.toBeNull()
+    expect(box!.width).toBeLessThanOrEqual(1024)
+  })
+})
