@@ -1807,3 +1807,111 @@ What I should do next:
   - center rail if retained
   - right workbench
 - Avoid re-opening unrelated scope questions unless a real tradeoff appears
+
+### 2026-04-17 Record 36
+Approved redesign for the session work page:
+- The user approved the concrete redesign direction for the main work page
+- The redesign target is only the working session page:
+  - left session / conversation area
+  - center mode rail
+  - right workbench with preview / editor / files / inspect
+
+Approved page-level architecture:
+- This page should no longer read as:
+  - OpenCode app shell with an atoms panel inserted inside it
+- It should instead read as:
+  - an Atoms-style builder work page that happens to be powered by OpenCode contexts and backend integrations
+- The official OpenCode frontend is still the source of truth for:
+  - session state
+  - file state
+  - SDK access
+  - preview backend calls
+  - terminal / prompt / sync contexts
+
+Approved visual shell:
+- The work page is composed of three persistent regions:
+  - `Session Panel`
+  - `Mode Rail`
+  - `Workbench`
+- The right workbench should remain the visual center of gravity
+- The left side should feel like a builder conversation workspace, not a generic OpenCode chat pane
+
+Approved `Session Panel` design:
+- Replace the current OpenCode-like chat framing with an Atoms-style builder chat shell
+- The panel is composed of four layers:
+  - `Session Header`
+    - project name
+    - session identity
+    - lightweight session status / turn information
+    - compact session switch entry
+  - `Conversation Stream`
+    - user / assistant / activity / decision rows rendered from the existing official data
+    - tighter spacing and clearer builder-card hierarchy
+    - fewer obvious OpenCode panel affordances
+  - `Composer Dock`
+    - fixed bottom builder input region
+    - suggestions and input feel like a single builder control surface
+    - avoid the look of an official OpenCode prompt input wrapped inside a themed border
+  - `Session Switcher`
+    - lightweight session switching / creation only
+    - not a full clone of the existing OpenCode project sidebar
+
+Approved `Mode Rail` design:
+- Keep the rail narrow and structural
+- Treat it as the builder mode spine rather than as a content panel
+- Retain:
+  - current workspace identity
+  - mode switching
+  - concise mode summary
+- Remove or weaken:
+  - large explanation blocks
+  - decorative filler panels
+  - excessive helper copy that makes the rail feel like a placeholder column
+
+Approved `Workbench` design:
+- The right workbench is the page's primary product surface
+- It keeps one consistent shell across all four modes:
+  - `Workbench Header`
+  - `Mode Tabs`
+  - `Canvas`
+- Each mode keeps its own content but shares the same frame language
+
+Approved per-mode intent:
+- `Preview`
+  - prioritize the app canvas visually
+  - keep HTML targets discoverable without overpowering the preview surface
+- `Editor`
+  - look like a real builder code workspace
+  - support closable tabs cleanly
+  - stop feeling like a relabeled files browser
+- `Files`
+  - focus on browsing and opening files
+  - do not duplicate editor responsibilities
+- `Inspect`
+  - feel like a focused changes / review station
+  - not just a generic diff panel dropped into the workbench
+
+Approved implementation boundary:
+- Preserve:
+  - `useSDK`
+  - `useSync`
+  - `useFile`
+  - official session / file / terminal / prompt flows
+  - official backend preview behavior through `/view/...`
+- Replace only the visible work-page shell and page-level framing for the session route
+- Do not expand this redesign to unrelated pages
+
+Approved execution order:
+- `Step 1`
+  - rebuild the page shell and region proportions so the page reads like Atoms at first glance
+- `Step 2`
+  - rebuild the left session panel so it no longer feels like OpenCode chat with a theme applied
+- `Step 3`
+  - unify the right workbench header / tabs / canvas language across preview, editor, files, and inspect
+- `Step 4`
+  - polish spacing, actions, empty states, and transition details
+
+Success criteria for the redesign:
+- A user looking only at the working page should recognize it as an Atoms-style builder workspace rather than an OpenCode page with themed inserts
+- The left session panel and right workbench should feel like two halves of one builder product
+- The underlying data and backend behavior should still remain compatible with the official OpenCode frontend architecture
