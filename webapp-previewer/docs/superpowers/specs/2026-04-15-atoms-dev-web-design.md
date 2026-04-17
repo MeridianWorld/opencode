@@ -1794,3 +1794,16 @@ Engineering consequence:
   - the session work page only
   - with OpenCode contexts and backend integrations preserved underneath
 - Future design proposals should be judged only against that page
+
+### 2026-04-17 Record 35
+Latest user response:
+- The user confirmed the narrowed scope and asked me to continue:
+  - `好`
+
+What I should do next:
+- Present the concrete design for the session work page only
+- Keep the discussion focused on:
+  - left session area
+  - center rail if retained
+  - right workbench
+- Avoid re-opening unrelated scope questions unless a real tradeoff appears
