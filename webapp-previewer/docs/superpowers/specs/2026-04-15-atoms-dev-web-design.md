@@ -2084,3 +2084,52 @@ New issue discovered during Task 2 code-quality review:
 Current next step:
 - Send `Issue D` back to the same Task 2 implementer
 - fix the responsive desktop floor before accepting Task 2 as complete
+
+### 2026-04-17 Record 41
+Task 2 final closeout:
+- Follow-up commits landed to close the remaining Task 2 gaps:
+  - `1bad90691`
+    - `fix: remove opencode branding from atoms shell`
+  - `3163af2a8`
+    - `fix: make atoms shell responsive on desktop`
+  - `7e4019133`
+    - `fix: prevent atoms shell clipping on narrow desktop`
+
+How the remaining Task 2 issues were handled:
+- `Issue C: visible OpenCode branding still leaked through the left panel`
+  - Handling:
+    - extend `atoms-workbench-shell.spec.ts` so visible assistant-side `OpenCode` branding fails the shell regression
+    - replace the assistant label in `src/pages/session/atoms/atoms-message.tsx`
+      - from `OpenCode`
+      - to `Assistant`
+  - Result:
+    - the session work page no longer leaks the old product branding through message chrome
+
+- `Issue D: the shell could still clip on smaller desktop widths`
+  - First follow-up was not sufficient:
+    - it reduced the width floor but did not fully prove the regions fit without clipping
+  - Final handling:
+    - relax the shell columns in `src/pages/session/atoms/atoms-shell.tsx` to:
+      - `minmax(0, 1fr) minmax(6rem, 9vw) minmax(0, 1.55fr)`
+    - extend `atoms-workbench-shell.spec.ts` with a `768px` desktop-width regression
+    - assert the shell and all three regions stay within the shell bounds
+  - Result:
+    - the narrow-desktop path now has real fit checks instead of only checking shell width
+    - Task 2 no longer depends on a wide desktop-only assumption
+
+Task 2 verification status:
+- `bun x playwright test e2e/app/atoms-workbench-shell.spec.ts --workers=1 --reporter=line`
+  - passed after follow-ups
+- `bun typecheck`
+  - passed after follow-ups
+
+Review status:
+- Task 2 spec review:
+  - approved after the assistant-label fix
+- Task 2 code-quality review:
+  - approved after the final narrow-desktop shell fix
+
+Current decision:
+- `Task 2` is complete
+- Move to `Task 3`
+  - rebuild the left side into a true Atoms session panel
