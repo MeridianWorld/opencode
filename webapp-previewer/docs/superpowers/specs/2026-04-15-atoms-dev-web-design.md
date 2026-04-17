@@ -1739,3 +1739,32 @@ Implementation consequence:
   - backend integration stays official
   - session/file/sync contexts stay official
   - we do not fork the backend behavior
+
+### 2026-04-17 Record 33
+Latest user clarification request:
+- The user asked:
+  - `session外壳和session route shell有什么区别?`
+
+My interpretation of the clarification need:
+- The terminology I used was too close and likely caused confusion
+- I should explain the difference in terms of:
+  - visual coverage
+  - routing / ownership boundary
+  - implementation impact
+
+Clarification I need to communicate:
+- `session外壳`
+  - means the visible UI chrome around the session content
+  - for example:
+    - top bar
+    - left project/session navigation
+    - main conversation frame
+    - right workbench frame
+- `session route shell`
+  - means the component-level container specifically used by the `/session` route
+  - it is the route-owned wrapper that assembles that visible chrome
+  - it is an implementation boundary, not just a visual concept
+
+Why this distinction matters:
+- If we only say `session外壳`, that describes the design target
+- If we say `session route shell`, that describes the engineering cut point where we can replace the UI without rewriting the whole app routing system
