@@ -2059,3 +2059,28 @@ Current next step:
 - Send `Issue C` back to the same Task 2 implementer
 - close the remaining visible OpenCode branding leak
 - re-run Task 2 spec review after that focused fix
+
+### 2026-04-17 Record 40
+Task 2 quality-review finding:
+- After Task 2 passed spec review, code-quality review still found one important regression.
+
+New issue discovered during Task 2 code-quality review:
+- `Issue D: the new three-column shell can clip on smaller desktop widths`
+  - Discovery:
+    - review found that the current shell columns have a combined desktop minimum width floor of roughly `73rem`
+  - Root cause:
+    - `src/pages/session/atoms/atoms-shell.tsx` currently uses:
+      - `minmax(24rem, 1.02fr) 11rem minmax(38rem, 1.62fr)`
+    - the page shell also hides overflow
+    - result:
+      - when the desktop window is narrower than that floor, the layout clips instead of reflowing
+  - Why it matters:
+    - this is a real desktop regression, not just a visual preference issue
+    - the current shell regression only checks a very wide `2048px` viewport, so it would not catch the clipping problem
+  - Handling decision:
+    - extend `atoms-workbench-shell.spec.ts` with a smaller-desktop regression
+    - then relax the shell column sizing so the three-region layout still fits smaller desktop widths without losing the workbench as the visual center
+
+Current next step:
+- Send `Issue D` back to the same Task 2 implementer
+- fix the responsive desktop floor before accepting Task 2 as complete
