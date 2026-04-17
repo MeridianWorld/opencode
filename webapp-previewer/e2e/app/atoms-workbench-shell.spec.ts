@@ -43,15 +43,31 @@ test("renders the atoms work-page frame with three persistent regions", async ({
 })
 
 test("reflows the atoms shell on smaller desktop widths without clipping the workbench", async ({ page, sdk, gotoSession }) => {
-  await page.setViewportSize({ width: 1024, height: 1003 })
+  await page.setViewportSize({ width: 768, height: 1003 })
 
   await withSession(sdk, `atoms shell ${Date.now()}`, async (session) => {
     await gotoSession(session.id)
 
     const shell = page.locator('[data-component="atoms-shell"]')
+    const chat = page.locator('[data-component="atoms-chat"]')
+    const rail = page.locator('[data-component="atoms-rail"]')
+    const workbench = page.locator('[data-component="atoms-workbench"]')
     const box = await shell.boundingBox()
+    const left = await chat.boundingBox()
+    const mid = await rail.boundingBox()
+    const right = await workbench.boundingBox()
 
     expect(box).not.toBeNull()
-    expect(box!.width).toBeLessThanOrEqual(1024)
+    expect(left).not.toBeNull()
+    expect(mid).not.toBeNull()
+    expect(right).not.toBeNull()
+
+    expect(box!.width).toBeLessThanOrEqual(768)
+    expect(left!.x).toBeGreaterThanOrEqual(box!.x)
+    expect(mid!.x).toBeGreaterThanOrEqual(box!.x)
+    expect(right!.x).toBeGreaterThanOrEqual(box!.x)
+    expect(left!.x + left!.width).toBeLessThanOrEqual(box!.x + box!.width)
+    expect(mid!.x + mid!.width).toBeLessThanOrEqual(box!.x + box!.width)
+    expect(right!.x + right!.width).toBeLessThanOrEqual(box!.x + box!.width)
   })
 })

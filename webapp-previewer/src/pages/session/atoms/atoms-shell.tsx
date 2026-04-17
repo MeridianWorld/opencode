@@ -10,7 +10,7 @@ export function AtomsShell(props: { chat: JSX.Element; rail: JSX.Element; workbe
         "min-height": "0",
         overflow: "hidden",
         display: "grid",
-        "grid-template-columns": "minmax(18rem, 1.05fr) clamp(8rem, 9vw, 11rem) minmax(24rem, 1.55fr)",
+        "grid-template-columns": "minmax(0, 1fr) minmax(6rem, 9vw) minmax(0, 1.55fr)",
         background:
           "linear-gradient(90deg, color-mix(in srgb, var(--atoms-page) 96%, #081326) 0%, var(--atoms-page) 24%, var(--atoms-page) 100%)",
         color: "var(--atoms-ink)",
