@@ -35,7 +35,7 @@ const tauriApi = () => (window as unknown as { __TAURI__?: TauriApi }).__TAURI__
 const currentDesktopWindow = () => tauriApi()?.window?.getCurrentWindow?.()
 const currentThemeWindow = () => tauriApi()?.webviewWindow?.getCurrentWebviewWindow?.()
 
-export function Titlebar() {
+export function Titlebar(props: { session?: boolean } = {}) {
   const layout = useLayout()
   const platform = usePlatform()
   const command = useCommand()
@@ -50,6 +50,7 @@ export function Titlebar() {
   const web = createMemo(() => platform.platform === "web")
   const zoom = () => platform.webviewZoom?.() ?? 1
   const minHeight = () => (mac() ? `${40 / zoom()}px` : undefined)
+  const shell = createMemo(() => (props.session ? false : layout.sidebar.opened()))
 
   const [history, setHistory] = createStore({
     stack: [] as string[],
@@ -174,7 +175,7 @@ export function Titlebar() {
           "pl-2": !mac(),
         }}
       >
-        <Show when={mac()}>
+        <Show when={mac() && !props.session}>
           <div class="h-full shrink-0" style={{ width: `${72 / zoom()}px` }} />
           <div class="xl:hidden w-10 shrink-0 flex items-center justify-center">
             <IconButton
@@ -187,7 +188,7 @@ export function Titlebar() {
             />
           </div>
         </Show>
-        <Show when={!mac()}>
+        <Show when={!mac() && !props.session}>
           <div class="xl:hidden w-[48px] shrink-0 flex items-center justify-center">
             <IconButton
               icon="menu"
@@ -200,24 +201,26 @@ export function Titlebar() {
           </div>
         </Show>
         <div class="flex items-center gap-1 shrink-0">
-          <TooltipKeybind
-            class={web() ? "hidden xl:flex shrink-0 ml-14" : "hidden xl:flex shrink-0 ml-2"}
-            placement="bottom"
-            title={language.t("command.sidebar.toggle")}
-            keybind={command.keybind("sidebar.toggle")}
-          >
-            <Button
-              variant="ghost"
-              class="group/sidebar-toggle titlebar-icon w-8 h-6 p-0 box-border"
-              onClick={layout.sidebar.toggle}
-              aria-label={language.t("command.sidebar.toggle")}
-              aria-expanded={layout.sidebar.opened()}
+          <Show when={!props.session}>
+            <TooltipKeybind
+              class={web() ? "hidden xl:flex shrink-0 ml-14" : "hidden xl:flex shrink-0 ml-2"}
+              placement="bottom"
+              title={language.t("command.sidebar.toggle")}
+              keybind={command.keybind("sidebar.toggle")}
             >
-              <Icon size="small" name={layout.sidebar.opened() ? "sidebar-active" : "sidebar"} />
-            </Button>
-          </TooltipKeybind>
+              <Button
+                variant="ghost"
+                class="group/sidebar-toggle titlebar-icon w-8 h-6 p-0 box-border"
+                onClick={layout.sidebar.toggle}
+                aria-label={language.t("command.sidebar.toggle")}
+                aria-expanded={layout.sidebar.opened()}
+              >
+                <Icon size="small" name={layout.sidebar.opened() ? "sidebar-active" : "sidebar"} />
+              </Button>
+            </TooltipKeybind>
+          </Show>
           <div class="hidden xl:flex items-center shrink-0">
-            <Show when={params.dir}>
+            <Show when={params.dir && !props.session}>
               <div
                 class="flex items-center shrink-0 w-8 mr-1"
                 aria-hidden={layout.sidebar.opened() ? "true" : undefined}
@@ -252,14 +255,14 @@ export function Titlebar() {
                 </div>
               </div>
             </Show>
-            <Show when={hasProjects()}>
+            <Show when={props.session || hasProjects()}>
               <div
                 class="flex items-center gap-0 transition-transform"
                 classList={{
-                  "translate-x-0": !layout.sidebar.opened(),
-                  "-translate-x-[36px]": layout.sidebar.opened(),
-                  "duration-180 ease-out": !layout.sidebar.opened(),
-                  "duration-180 ease-in": layout.sidebar.opened(),
+                  "translate-x-0": !shell(),
+                  "-translate-x-[36px]": shell(),
+                  "duration-180 ease-out": !shell(),
+                  "duration-180 ease-in": shell(),
                 }}
               >
                 <Tooltip placement="bottom" value={language.t("common.goBack")} openDelay={2000}>
