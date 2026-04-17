@@ -51,7 +51,7 @@ export function AtomsChat(props: {
               <AtomsChatHeader
                 title={props.title}
                 note={<span>{props.note}</span>}
-                subtitle="Current OpenCode session content rendered with atoms-native message cards."
+                subtitle="Conversation-first session stream."
               />
               <AtomsChatStream rows={props.rows} />
             </Match>

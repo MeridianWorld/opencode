@@ -22,7 +22,7 @@ export function AtomsTopbar(props: {
     >
       <div style={{ display: "flex", "align-items": "center", "justify-content": "space-between", gap: "1rem", "flex-wrap": "wrap" }}>
         <div class="min-w-0">
-          <div class="truncate text-[13px] font-medium text-[var(--atoms-soft)]">Atoms-style workspace</div>
+          <div class="truncate text-[13px] font-medium text-[var(--atoms-soft)]">Session workbench</div>
           <div class="mt-1 flex items-center gap-3">
             <h3 class="truncate text-[30px] leading-none font-semibold text-[var(--atoms-ink)]">{props.title}</h3>
             <Show when={props.subtitle}>

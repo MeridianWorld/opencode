@@ -20,7 +20,7 @@ export function AtomsChatHeader(props: { title: string; note?: JSX.Element; subt
             {props.title}
           </div>
           <div class="mt-2 text-[14px] leading-6 text-[var(--atoms-soft)]">
-            {props.subtitle ?? "Atoms-native chat view backed by the active OpenCode session."}
+            {props.subtitle ?? "The live session stream updates here."}
           </div>
         </div>
         <div class={badge()}>{props.note}</div>

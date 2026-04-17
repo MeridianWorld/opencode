@@ -10,13 +10,14 @@ export function AtomsRail(props: {
   return (
     <aside
       data-component="atoms-rail"
-      style={{ width: "100%", height: "100%", display: "flex", "flex-direction": "column", padding: "1.25rem 1rem" }}
+      style={{ width: "100%", height: "100%", display: "flex", "flex-direction": "column", padding: "1rem 0.9rem" }}
     >
       <div
         style={{
-          padding: "1rem",
-          "border-radius": "1.75rem",
-          background: "rgba(255,255,255,0.12)",
+          padding: "0.95rem",
+          "border-radius": "1.5rem",
+          border: "1px solid rgba(255,255,255,0.08)",
+          background: "rgba(255,255,255,0.08)",
           "box-shadow": "inset 0 1px 0 rgba(255,255,255,0.08)",
         }}
       >
@@ -31,10 +32,10 @@ export function AtomsRail(props: {
         </div>
       </div>
 
-      <div style={{ "margin-top": "1.5rem", "font-size": "11px", "font-weight": 600, "text-transform": "uppercase", "letter-spacing": "0.24em", color: "rgba(255,255,255,0.45)" }}>
-        Workspace
+      <div style={{ "margin-top": "1.4rem", "font-size": "11px", "font-weight": 600, "text-transform": "uppercase", "letter-spacing": "0.24em", color: "rgba(255,255,255,0.45)" }}>
+        Modes
       </div>
-      <div style={{ "margin-top": "0.75rem", display: "flex", "flex-direction": "column", gap: "0.5rem" }}>
+      <div style={{ "margin-top": "0.75rem", display: "flex", "flex-direction": "column", gap: "0.45rem" }}>
         <For each={props.items}>
           {(item) => (
             <button
@@ -64,21 +65,6 @@ export function AtomsRail(props: {
             </button>
           )}
         </For>
-      </div>
-
-      <div
-        style={{
-          "margin-top": "auto",
-          padding: "1rem",
-          "border-radius": "1.5rem",
-          border: "1px solid rgba(255,255,255,0.1)",
-          background: "rgba(255,255,255,0.06)",
-          "font-size": "13px",
-          "line-height": 1.8,
-          color: "rgba(255,255,255,0.68)",
-        }}
-      >
-        The left conversation stays official. The center rail and right workspace are where the atoms-style shell lives.
       </div>
     </aside>
   )

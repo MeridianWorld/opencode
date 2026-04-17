@@ -10,8 +10,9 @@ export function AtomsShell(props: { chat: JSX.Element; rail: JSX.Element; workbe
         "min-height": "0",
         overflow: "hidden",
         display: "grid",
-        "grid-template-columns": "minmax(20rem, 0.92fr) 15rem minmax(26rem, 1.4fr)",
-        background: "var(--atoms-page)",
+        "grid-template-columns": "minmax(24rem, 1.02fr) 11rem minmax(38rem, 1.62fr)",
+        background:
+          "linear-gradient(90deg, color-mix(in srgb, var(--atoms-page) 96%, #081326) 0%, var(--atoms-page) 24%, var(--atoms-page) 100%)",
         color: "var(--atoms-ink)",
       }}
     >
@@ -22,7 +23,8 @@ export function AtomsShell(props: { chat: JSX.Element; rail: JSX.Element; workbe
           display: "flex",
           "flex-direction": "column",
           position: "relative",
-          background: "var(--atoms-chat)",
+          background:
+            "linear-gradient(180deg, color-mix(in srgb, var(--atoms-chat) 98%, white) 0%, var(--atoms-chat) 100%)",
           "border-right": "1px solid var(--atoms-line)",
         }}
       >
@@ -33,7 +35,8 @@ export function AtomsShell(props: { chat: JSX.Element; rail: JSX.Element; workbe
           "min-width": "0",
           "min-height": "0",
           position: "relative",
-          background: "var(--atoms-rail)",
+          background:
+            "linear-gradient(180deg, #17305d 0%, #102344 48%, #0c1c38 100%)",
           color: "#fff",
           "border-right": "1px solid var(--atoms-line)",
         }}
@@ -47,7 +50,7 @@ export function AtomsShell(props: { chat: JSX.Element; rail: JSX.Element; workbe
           display: "flex",
           "flex-direction": "column",
           position: "relative",
-          background: "var(--atoms-surface)",
+          background: "linear-gradient(180deg, color-mix(in srgb, var(--atoms-surface) 98%, white) 0%, var(--atoms-surface) 100%)",
         }}
       >
         {props.workbench}

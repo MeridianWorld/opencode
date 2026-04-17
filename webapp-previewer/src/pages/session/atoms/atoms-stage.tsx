@@ -21,9 +21,6 @@ export function AtomsStage(props: ParentProps<{ eyebrow?: string; title: string;
         <div class="mt-2 flex items-start justify-between gap-4">
           <div class="min-w-0">
             <h2 class="text-[28px] leading-[1.1] font-semibold text-[var(--atoms-ink)]">{props.title}</h2>
-            <p class="mt-2 max-w-[36rem] text-[14px] leading-6 text-[var(--atoms-soft)]">
-              Keep the official OpenCode session flow, but present it like an atoms-style builder workspace.
-            </p>
           </div>
           <Show when={props.note}>
             {(value) => <div class="shrink-0">{value()}</div>}
