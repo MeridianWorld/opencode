@@ -2167,3 +2167,79 @@ Fresh verification for the carry-over preview fix:
 Current decision:
 - commit the carry-over preview fix first
 - then start `Task 3` on a cleaner `session.tsx` base
+
+### 2026-04-17 Record 43
+Task 3 implementation and closeout:
+- `Task 3` focused on the left session panel only.
+- During execution, the original subagent path was interrupted by usage limits, so I took over the implementation locally and continued the task directly.
+
+Main Task 3 changes:
+- Added:
+  - `e2e/app/atoms-session-panel.spec.ts`
+  - `src/pages/session/atoms/atoms-session-switcher.tsx`
+- Reworked the left panel components:
+  - `src/pages/session/atoms/atoms-chat.tsx`
+  - `src/pages/session/atoms/atoms-chat-header.tsx`
+  - `src/pages/session/atoms/atoms-chat-stream.tsx`
+  - `src/pages/session/atoms/atoms-message.tsx`
+  - `src/pages/session/atoms/atoms-activity-card.tsx`
+  - `src/pages/session/atoms/atoms-decision-card.tsx`
+  - `src/pages/session/atoms/atoms-composer.tsx`
+- Updated left-panel wiring in:
+  - `src/pages/session.tsx`
+
+What changed in the UI:
+- Removed the old panel-level `Conversation` framing.
+- Replaced it with:
+  - a compact builder-style header
+  - a new `atoms-session-switcher`
+  - a calmer builder-style stream surface
+  - a more docked composer shell
+- Shifted message / activity / decision cards away from generic chat styling toward builder update cards.
+
+New issue discovered during Task 3 code-quality review:
+- `Issue E: the new left panel broke the session scroll contract`
+  - Discovery:
+    - review found that the new `atoms-chat-stream` became a plain scrollable div and no longer received the original scroll ref / handler wiring
+  - Root cause:
+    - `session.tsx` still maintains:
+      - `scroller`
+      - `autoScroll`
+      - `historyWindow.onScrollerScroll()`
+    - but the refactored `AtomsChatStream` no longer exposed the hooks needed to connect that logic
+  - Why it matters:
+    - lazy history loading and bottom anchoring would regress once the stream overflowed
+  - Handling:
+    - add `scrollRef` and `onScroll` props to `AtomsChatStream`
+    - pass them through `AtomsChat`
+    - reconnect them in `session.tsx` using:
+      - `setScrollRef`
+      - `scheduleScrollState(el)`
+      - `historyWindow.onScrollerScroll()`
+  - Result:
+    - the new left panel keeps the visual redesign without disconnecting the existing scroll / history behavior path
+
+Task 3 test-strengthening decision:
+- The original `atoms-session-panel` test only checked visibility.
+- I strengthened it so it now:
+  - creates a real active session
+  - verifies the switcher action is visible
+  - clicks `New session`
+  - confirms the panel transitions back to `Draft session`
+
+Task 3 verification status:
+- `bun x playwright test e2e/app/atoms-session-panel.spec.ts --workers=1 --reporter=line`
+  - passed
+- `bun typecheck`
+  - passed
+
+Review status:
+- Task 3 spec review:
+  - approved
+- Task 3 code-quality review:
+  - approved after the scroll-contract reconnection
+
+Current decision:
+- `Task 3` is complete
+- Move to `Task 4`
+  - unify preview, editor, files, and inspect into one final workbench shell

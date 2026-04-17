@@ -28,7 +28,7 @@ import { Button } from "@opencode-ai/ui/button"
 import { showToast } from "@opencode-ai/ui/toast"
 import { checksum } from "@opencode-ai/util/encode"
 import { getFilename } from "@opencode-ai/util/path"
-import { useSearchParams } from "@solidjs/router"
+import { useNavigate, useSearchParams } from "@solidjs/router"
 import { NewSessionView } from "@/components/session"
 import { useComments } from "@/context/comments"
 import { getSessionPrefetch, SESSION_PREFETCH_TTL } from "@/context/global-sync/session-prefetch"
@@ -57,6 +57,7 @@ import { AtomsInspectPane } from "@/pages/session/atoms/atoms-inspect-pane"
 import { AtomsPage } from "@/pages/session/atoms/atoms-page"
 import { AtomsPreview } from "@/pages/session/atoms/atoms-preview"
 import { AtomsRail } from "@/pages/session/atoms/atoms-rail"
+import { AtomsSessionSwitcher } from "@/pages/session/atoms/atoms-session-switcher"
 import { buildAtomsRows, reuseAtomsRows, type AtomsRow } from "@/pages/session/atoms/atoms-thread"
 import { AtomsWorkbench } from "@/pages/session/atoms/atoms-workbench"
 import { createAtomsState } from "@/pages/session/atoms/state"
@@ -339,6 +340,7 @@ export default function Page() {
   const prompt = usePrompt()
   const comments = useComments()
   const terminal = useTerminal()
+  const nav = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams<{ prompt?: string }>()
   const { params, sessionKey, tabs, view } = useSessionLayout()
 
@@ -2057,6 +2059,23 @@ export default function Page() {
               ready={messagesReady()}
               active={!!params.id}
               newSessionWorktree={newSessionWorktree()}
+              scrollRef={setScrollRef}
+              onScroll={(el) => {
+                scheduleScrollState(el)
+                historyWindow.onScrollerScroll()
+              }}
+              switcher={
+                <AtomsSessionSwitcher
+                  name={projectName()}
+                  status={params.id ? "Live session" : "Draft session"}
+                  note={stageNote()}
+                  action={params.id ? "New session" : undefined}
+                  onAction={() => {
+                    if (!params.dir) return
+                    nav(`/${params.dir}/session`)
+                  }}
+                />
+              }
             />
             <AtomsComposer hints={["Scaffold UI", "Open changed files", "Review latest diff"]}>
               <SessionComposerRegion
