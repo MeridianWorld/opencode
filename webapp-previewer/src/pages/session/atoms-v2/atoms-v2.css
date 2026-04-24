@@ -304,8 +304,17 @@
 
 .atoms-v2-composer [data-component="prompt-input"] {
   min-block-size: 94px;
+  padding-top: 16px !important;
+  padding-right: 20px !important;
+  padding-left: 20px !important;
   font-size: 14px;
   color: var(--v2-ink);
+}
+
+.atoms-v2-composer [data-component="prompt-input"] + div:not([aria-hidden="true"]) {
+  padding-top: 16px !important;
+  padding-right: 20px !important;
+  padding-left: 20px !important;
 }
 
 .atoms-v2-composer [data-component="prompt-input"] + div[aria-hidden="true"] {

@@ -22,3 +22,19 @@ test("atoms-v2 keeps one shell while switching viewer and editor modes", async (
   await expect(page.locator('[data-component="atoms-v2-viewer"]')).toBeVisible()
   await expect(shell).toBeVisible()
 })
+
+test("atoms-v2 gives the composer text layer proper inset", async ({ page, project }) => {
+  await page.setViewportSize({ width: 1728, height: 1117 })
+  await project.open()
+
+  const input = page.locator('.atoms-v2-composer [data-component="prompt-input"]')
+  const hint = page.locator('.atoms-v2-composer [data-component="prompt-input"] + div:not([aria-hidden])')
+
+  await expect(input).toBeVisible()
+  await expect(hint).toBeVisible()
+
+  expect(await input.evaluate((node) => getComputedStyle(node).paddingLeft)).toBe("20px")
+  expect(await input.evaluate((node) => getComputedStyle(node).paddingTop)).toBe("16px")
+  expect(await hint.evaluate((node) => getComputedStyle(node).paddingLeft)).toBe("20px")
+  expect(await hint.evaluate((node) => getComputedStyle(node).paddingTop)).toBe("16px")
+})

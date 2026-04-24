@@ -2665,3 +2665,32 @@ My understanding of the rule:
 
 Current decision:
 - adopt this as a standing workflow rule for the remaining Atoms front-end work
+
+### 2026-04-24 Record 59
+New composer spacing bug reported by the user:
+- The user pointed out that the text inside the composer looked pressed directly against the edge of the box.
+- The user expectation is correct:
+  - the Atoms-style composer should keep clear breathing room around both the editable text layer and the visible placeholder text
+
+Root-cause understanding:
+- the visible shell around the composer had already been rebuilt in `atoms-v2.css`
+- but the actual text layer still came from the shared `PromptInput` internals, which keep compact default utility padding:
+  - editable layer:
+    - `pl-3 pr-2 pt-2`
+  - placeholder layer:
+    - `pl-3 pr-2 pt-2`
+- those defaults are acceptable for the tighter OpenCode composer, but they are too cramped inside the larger pale Atoms composer shell, which made the text read as glued to the upper-left corner
+
+Resolution applied:
+- keep the shared prompt logic untouched
+- override the text insets only inside `src/pages/session/atoms-v2/atoms-v2.css`
+- increase the editable and placeholder insets to a larger Atoms-style spacing:
+  - left/right padding -> `20px`
+  - top padding -> `16px`
+- this keeps the fix local to the Atoms reproduction while preserving the existing backend-facing prompt implementation
+
+Verification plan for this bugfix:
+- add a focused Playwright regression that checks the computed padding of:
+  - the editable prompt layer
+  - the visible placeholder layer
+- run that focused spec after the CSS change and use it as the guard for future spacing regressions
