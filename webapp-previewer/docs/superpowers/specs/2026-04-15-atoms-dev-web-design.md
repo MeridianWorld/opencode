@@ -2477,3 +2477,21 @@ Approved milestone-1 scope:
 
 Current decision:
 - Continue the design with implementation strategy and page integration boundaries for the new workbench shell
+
+### 2026-04-24 Record 52
+Design checkpoint approval:
+- I presented the implementation strategy and integration boundaries for the new workbench shell.
+- The user approved that section.
+
+Approved implementation strategy:
+- build a new `atoms-v2` style component tree instead of extending the current `src/pages/session/atoms/*` set as the primary visual base
+- let the session route become a thin mount layer for the new shell rather than the place where visible layout complexity lives
+- allow milestone 1 to run on stable demo content
+- keep the existing atoms/session implementation in the repo as an older prototype rather than deleting it immediately
+- introduce a new visual token system for the rebooted shell instead of inheriting current OpenCode tokens
+- keep milestone-1 priority strictly ordered as:
+  - visual fidelity first
+  - data realism second
+
+Current decision:
+- Continue the design with interaction boundaries, state shape, and milestone-1 acceptance behavior
