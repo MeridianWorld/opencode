@@ -2548,3 +2548,50 @@ Current decision:
 - treat the spec as approved
 - execute the plan inline
 - keep updating this rolling design log with implementation findings, errors, and resolutions
+
+### 2026-04-24 Record 55
+Implementation checkpoint for the rebooted workbench shell:
+- I replaced the visible session workbench with a new `atoms-v2` front-end path mounted from `src/pages/session.tsx`.
+- The new implementation now lives primarily in:
+  - `D:/github_repo/opencode/webapp-previewer/src/pages/session/atoms-v2/fixtures.ts`
+  - `D:/github_repo/opencode/webapp-previewer/src/pages/session/atoms-v2/state.ts`
+  - `D:/github_repo/opencode/webapp-previewer/src/pages/session/atoms-v2/page.tsx`
+  - `D:/github_repo/opencode/webapp-previewer/src/pages/session/atoms-v2/toolbar.tsx`
+  - `D:/github_repo/opencode/webapp-previewer/src/pages/session/atoms-v2/conversation.tsx`
+  - `D:/github_repo/opencode/webapp-previewer/src/pages/session/atoms-v2/spine.tsx`
+  - `D:/github_repo/opencode/webapp-previewer/src/pages/session/atoms-v2/viewer.tsx`
+  - `D:/github_repo/opencode/webapp-previewer/src/pages/session/atoms-v2/editor.tsx`
+  - `D:/github_repo/opencode/webapp-previewer/src/pages/session/atoms-v2/atoms-v2.css`
+
+Key implementation outcome:
+- the session route now reads as a dedicated Atoms-like workbench shell rather than the old OpenCode-like hybrid
+- viewer and editor are both real front-end states inside the same shell
+- files and inspect now have shell-level placeholder states so the top-level workbench mode set is visually complete
+- the real prompt input still remains mounted in the left composer area so the route keeps the official front-end calling path available later
+
+Errors found during implementation:
+- state derivation bug:
+  - I initially used `createMemo` for the milestone-1 `scene` selection in `atoms-v2/state.ts`
+  - under the direct unit-test path that value did not refresh as expected after `mode` changes
+  - resolution:
+    - replace the memo with a direct derived function from `mode()`
+- route-shell bug:
+  - the session route still rendered the default OpenCode `Titlebar`, leaving an extra application chrome band above the new workbench
+  - resolution:
+    - gate `Titlebar` to non-session routes only in `src/pages/layout.tsx`
+- test-stack bug:
+  - an initial editor component render test tried to use client-only Solid rendering APIs under Bun's server-oriented test resolution and failed
+  - resolution:
+    - replace that fragile render-path check with:
+      - focused editor semantic unit coverage
+      - Playwright page-level interaction coverage for the real session route
+
+Verification commands run successfully:
+- from `D:/github_repo/opencode/webapp-previewer`
+- `bun test --preload ./happydom.ts ./src/pages/session/atoms-v2/state.test.ts ./src/pages/session/atoms-v2/editor.test.tsx`
+- `bun typecheck`
+- `bun x playwright test e2e/app/atoms-session-shell.spec.ts e2e/app/atoms-workbench-shell.spec.ts e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=line`
+
+Current decision:
+- keep this new `atoms-v2` workbench as the active visual path
+- use the old atoms/session implementation only as historical prototype context, not as the visible workbench base
