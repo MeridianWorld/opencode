@@ -19,7 +19,10 @@ export function AtomsFilesPane(props: {
   open: (path: string) => void
 }) {
   return (
-    <div data-component="atoms-files-pane" class="flex size-full min-h-0 min-w-0 flex-col bg-[var(--atoms-panel)]">
+    <div
+      data-component="atoms-files-pane"
+      class="flex size-full min-h-0 min-w-0 flex-col bg-[color-mix(in_srgb,var(--atoms-panel)_90%,white)]"
+    >
       <div class="border-b border-[var(--atoms-line)] px-4 py-3">
         <div class="flex items-center justify-between gap-3">
           <div>

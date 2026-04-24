@@ -11,7 +11,10 @@ export function AtomsEditorPane(props: {
   path: (tab: string) => string | undefined
 }) {
   return (
-    <div data-component="atoms-editor-pane" class="flex size-full min-h-0 min-w-0 flex-col bg-[var(--atoms-card)]">
+    <div
+      data-component="atoms-editor-pane"
+      class="flex size-full min-h-0 min-w-0 flex-col bg-[color-mix(in_srgb,var(--atoms-card)_98%,white)]"
+    >
       <div class="border-b border-[var(--atoms-line)] px-4 py-3">
         <Show
           when={props.tabs.length > 0}

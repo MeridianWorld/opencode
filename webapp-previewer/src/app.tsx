@@ -38,18 +38,22 @@ import { ModelsProvider } from "@/context/models"
 import { NotificationProvider } from "@/context/notification"
 import { PermissionProvider } from "@/context/permission"
 import { PromptProvider } from "@/context/prompt"
+import { type Platform, PlatformProvider } from "@/context/platform"
 import { ServerConnection, ServerProvider, serverName, useServer } from "@/context/server"
 import { SettingsProvider } from "@/context/settings"
 import { TerminalProvider } from "@/context/terminal"
 import DirectoryLayout from "@/pages/directory-layout"
 import Layout from "@/pages/layout"
+import { handleNotificationClick } from "@/utils/notification-click"
 import { ErrorPage } from "./pages/error"
 import { useCheckServerHealth } from "./utils/server-health"
+import pkg from "../package.json"
 
 const HomeRoute = lazy(() => import("@/pages/home"))
 const loadSession = () => import("@/pages/session")
 const Session = lazy(loadSession)
 const Loading = () => <div class="size-full" />
+const def = "opencode.settings.dat:defaultServerUrl"
 
 if (typeof location === "object" && /\/session(?:\/|$)/.test(location.pathname)) {
   void loadSession()
@@ -62,6 +66,86 @@ const SessionRoute = () => (
 )
 
 const SessionIndexRoute = () => <Navigate href="session" />
+
+const read = (key: string) => {
+  if (typeof localStorage === "undefined") return null
+  try {
+    return localStorage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+const write = (key: string, value: string | null) => {
+  if (typeof localStorage === "undefined") return
+  try {
+    if (value !== null) {
+      localStorage.setItem(key, value)
+      return
+    }
+    localStorage.removeItem(key)
+  } catch {
+    return
+  }
+}
+
+const current = () => {
+  if (location.hostname.includes("opencode.ai")) return "http://localhost:4096"
+  if (import.meta.env.DEV)
+    return `http://${import.meta.env.VITE_OPENCODE_SERVER_HOST ?? "localhost"}:${import.meta.env.VITE_OPENCODE_SERVER_PORT ?? "4096"}`
+  return location.origin
+}
+
+const stored = () => read(def)
+
+const fallback = () => stored() ?? current()
+
+const notify: Platform["notify"] = async (title, description, href) => {
+  if (!("Notification" in window)) return
+
+  const perm =
+    Notification.permission === "default"
+      ? await Notification.requestPermission().catch(() => "denied")
+      : Notification.permission
+
+  if (perm !== "granted") return
+  if (document.visibilityState === "visible" && document.hasFocus()) return
+
+  const item = new Notification(title, {
+    body: description ?? "",
+    icon: "https://opencode.ai/favicon-96x96-v3.png",
+  })
+
+  item.onclick = () => {
+    handleNotificationClick(href)
+    item.close()
+  }
+}
+
+const platform: Platform = {
+  platform: "web",
+  version: pkg.version,
+  openLink: (url) => {
+    window.open(url, "_blank")
+  },
+  back: () => {
+    window.history.back()
+  },
+  forward: () => {
+    window.history.forward()
+  },
+  restart: async () => {
+    window.location.reload()
+  },
+  notify,
+  getDefaultServer: async () => {
+    const url = stored()
+    return url ? ServerConnection.Key.make(url) : null
+  },
+  setDefaultServer: (url) => {
+    write(def, url)
+  },
+}
 
 function UiI18nBridge(props: ParentProps) {
   const language = useLanguage()
@@ -305,5 +389,17 @@ export function AppInterface(props: {
         </ServerKey>
       </ConnectionGate>
     </ServerProvider>
+  )
+}
+
+export default function App() {
+  const server: ServerConnection.Http = { type: "http", http: { url: current() } }
+
+  return (
+    <PlatformProvider value={platform}>
+      <AppBaseProviders>
+        <AppInterface defaultServer={ServerConnection.Key.make(fallback())} servers={[server]} disableHealthCheck />
+      </AppBaseProviders>
+    </PlatformProvider>
   )
 }

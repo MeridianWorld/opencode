@@ -1,10 +1,6 @@
-import { Show } from "solid-js"
-import { badge } from "./chrome"
 import { AtomsModeSwitch } from "./atoms-mode-switch"
 
 export function AtomsTopbar(props: {
-  title: string
-  subtitle?: string
   active: string
   items: readonly { id: string; label: string }[]
   onSelect: (id: string) => void
@@ -14,25 +10,19 @@ export function AtomsTopbar(props: {
       data-component="atoms-topbar"
       style={{
         "flex-shrink": 0,
-        padding: "1rem 1.25rem",
+        padding: "0.95rem 1.25rem",
         "border-bottom": "1px solid var(--atoms-line)",
-        background: "color-mix(in srgb, var(--atoms-card) 92%, transparent)",
+        background: "color-mix(in srgb, var(--atoms-card) 94%, transparent)",
         "backdrop-filter": "blur(12px)",
       }}
     >
       <div style={{ display: "flex", "align-items": "center", "justify-content": "space-between", gap: "1rem", "flex-wrap": "wrap" }}>
         <div class="min-w-0">
-          <div class="truncate text-[13px] font-medium text-[var(--atoms-soft)]">Session workbench</div>
-          <div class="mt-1 flex items-center gap-3">
-            <h3 class="truncate text-[30px] leading-none font-semibold text-[var(--atoms-ink)]">{props.title}</h3>
-            <Show when={props.subtitle}>
-              {(value) => (
-                <span class={badge()}>
-                  <span class="size-1.5 rounded-full bg-[var(--atoms-accent)]" />
-                  {value()}
-                </span>
-              )}
-            </Show>
+          <div class="truncate text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--atoms-soft)]">
+            Workbench
+          </div>
+          <div class="mt-2 text-[13px] leading-6 text-[var(--atoms-soft)]">
+            Switch between preview, code, files, and review without leaving the same working surface.
           </div>
         </div>
 

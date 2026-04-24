@@ -2243,3 +2243,107 @@ Current decision:
 - `Task 3` is complete
 - Move to `Task 4`
   - unify preview, editor, files, and inspect into one final workbench shell
+
+### 2026-04-24 Record 44
+Task 4 in-progress notes:
+- I started `Task 4` by writing the red expectations that the right side should keep exactly one `atoms-workbench` shell and no longer render `atoms-side` as a second wrapper.
+- Initial Task 4 implementation:
+  - remove `AtomsSide` from `src/pages/session/atoms/atoms-workbench.tsx`
+  - keep one shared structure:
+    - `atoms-topbar`
+    - `atoms-workbench-header`
+    - `atoms-workbench-body`
+  - retune the mode surfaces so:
+    - files
+    - editor
+    - inspect
+    each sit inside the same workbench frame instead of defining a second shell layer
+
+New issue discovered while verifying Task 4:
+- `Issue F: the app entry stopped booting after the worktree switched to a simplified entry file`
+  - Discovery:
+    - `bun typecheck` failed with:
+      - `src/entry.tsx(5,8): error TS1192: Module ".../src/app" has no default export`
+    - Playwright also failed before reaching Task 4 assertions because the browser page threw:
+      - `The requested module '/src/app.tsx' does not provide an export named 'default'`
+  - Root cause:
+    - the current working tree already contained a simplified `src/entry.tsx` that now imports:
+      - `import App from "@/app"`
+    - but `src/app.tsx` only exported named providers and `AppInterface`, so the app could not mount at all
+  - Why I treated it as a blocking dependency instead of ignoring it:
+    - this was not a cosmetic warning
+    - it prevented the session route from rendering, which meant Task 4 e2e results were not trustworthy until the app could boot again
+  - Handling:
+    - I did not revert the simplified `entry.tsx`
+    - instead I added a minimal default export in `src/app.tsx` that restores the web boot path there:
+      - `PlatformProvider`
+      - `AppBaseProviders`
+      - `AppInterface`
+      - default server url persistence
+      - web notification / navigation helpers
+    - after adding the default export, I forced a fresh `tsgo` rebuild once because the first `bun typecheck` result was still using the previous module graph
+  - Result:
+    - the app boots again through the simplified `entry.tsx`
+    - Task 4 tests can now exercise the actual UI instead of failing at import time
+
+Verification after the entry compatibility fix:
+- `bun x tsgo -b --force`
+  - passed
+- `bun typecheck`
+  - passed
+- `bun x playwright test e2e/app/atoms-workbench.spec.ts e2e/app/atoms-workspace-tabs.spec.ts --workers=1 --reporter=line`
+  - passed
+
+Temporary visual-review support:
+- I started the current preview environment so the user can inspect the in-progress frontend directly.
+- Running services:
+  - backend:
+    - `http://127.0.0.1:4096`
+  - frontend:
+    - `http://localhost:5173`
+
+Current decision:
+- keep `Task 4` in progress
+- continue the full right-workbench regression run next
+- only commit after the remaining Task 4 verification is green
+
+### 2026-04-24 Record 45
+Task 4 verification closeout:
+- After the entry compatibility fix, I ran the focused Task 4 regression set:
+  - `e2e/app/atoms-workbench.spec.ts`
+  - `e2e/app/atoms-workbench-shell.spec.ts`
+  - `e2e/app/atoms-preview.spec.ts`
+  - `e2e/app/atoms-workspace-tabs.spec.ts`
+
+New issue discovered during the full Task 4 regression:
+- `Issue G: the workspace-tabs e2e test assumed exact file button names even after diff state badges appeared`
+  - Discovery:
+    - the only failing spec after the shell unification work was:
+      - `atoms-workspace-tabs`
+    - failure point:
+      - the test tried to click `beta.ts` by exact accessible name after returning to the Files mode
+    - error-context snapshot showed the file was visible, but the button name had become:
+      - `beta.ts A`
+  - Root cause:
+    - once diff state is available, the file tree button name includes the status suffix (`A`, `M`, `D`)
+    - the e2e assertion was still anchored to `^beta\.ts$`
+  - Handling:
+    - widen the test matcher to accept names that start with the file name:
+      - `^alpha\.ts\b`
+      - `^beta\.ts\b`
+  - Why I changed the test instead of the product code:
+    - the workbench shell itself was functioning correctly
+    - the remaining failure was the test overfitting a transient accessible-name detail rather than a real user-facing regression in the Task 4 shell
+
+Final Task 4 verification:
+- `bun typecheck`
+  - passed
+- `bun x playwright test e2e/app/atoms-workspace-tabs.spec.ts --workers=1 --reporter=line`
+  - passed
+- `bun x playwright test e2e/app/atoms-workbench.spec.ts e2e/app/atoms-workbench-shell.spec.ts e2e/app/atoms-preview.spec.ts e2e/app/atoms-workspace-tabs.spec.ts --workers=1 --reporter=line`
+  - passed
+
+Current decision:
+- `Task 4` is complete
+- next step is `Task 5`
+  - final polish, docs, and regression lock

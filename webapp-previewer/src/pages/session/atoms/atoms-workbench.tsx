@@ -1,5 +1,4 @@
 import { Match, Switch, type JSX } from "solid-js"
-import { AtomsSide } from "./atoms-side"
 import { AtomsTopbar } from "./atoms-topbar"
 import { AtomsWorkbenchHeader } from "./atoms-workbench-header"
 
@@ -27,21 +26,19 @@ export function AtomsWorkbench(props: {
         "flex-direction": "column",
       }}
     >
-      <AtomsTopbar
-        title={props.title}
-        subtitle={props.note}
-        active={props.active}
-        items={props.items}
-        onSelect={props.onSelect}
-      />
-      <AtomsSide head={<AtomsWorkbenchHeader title={props.title} note={props.note} />}>
+      <AtomsTopbar active={props.active} items={props.items} onSelect={props.onSelect} />
+      <AtomsWorkbenchHeader title={props.title} note={props.note} />
+      <div
+        data-component="atoms-workbench-body"
+        class="min-h-0 min-w-0 flex-1 overflow-hidden rounded-tl-[28px] bg-[color-mix(in_srgb,var(--atoms-card)_96%,white)]"
+      >
         <Switch>
           <Match when={props.active === "preview"}>{props.preview}</Match>
           <Match when={props.active === "editor"}>{props.editor}</Match>
           <Match when={props.active === "files"}>{props.files}</Match>
           <Match when={props.active === "inspect"}>{props.inspect}</Match>
         </Switch>
-      </AtomsSide>
+      </div>
     </section>
   )
 }

@@ -13,30 +13,30 @@ test("uses a dedicated editor pane with closable file tabs", async ({ page, proj
   })
 
   const top = page.locator('[data-component="atoms-topbar"]')
-  const side = page.locator('[data-component="atoms-side"]')
+  const bench = page.locator('[data-component="atoms-workbench"]')
   const editor = page.locator('[data-component="atoms-editor-pane"]')
   const files = page.locator('[data-component="atoms-files-pane"]')
   const tabs = page.locator('[data-component="atoms-editor-tabs"]')
 
   await top.getByRole("button", { name: /^Editor$/ }).click()
-  await expect(side).toContainText("Editor")
+  await expect(page.locator('[data-component="atoms-side"]')).toHaveCount(0)
   await expect(editor).toBeVisible()
   await expect(editor).toContainText(/No open files/i)
   await expect(files).toHaveCount(0)
 
   await top.getByRole("button", { name: /^Files$/ }).click()
   await expect(files).toBeVisible()
-  await side.getByRole("button", { name: /^All$/ }).click()
-  await side.locator('[data-component="filetree"]').getByRole("button", { name: /^alpha\.ts$/ }).click()
+  await files.getByRole("button", { name: /^All$/ }).click()
+  await files.locator('[data-component="filetree"]').getByRole("button", { name: /^alpha\.ts\b/i }).click()
 
-  await expect(side).toContainText("Editor")
+  await expect(bench).toHaveAttribute("data-mode", "editor")
   await expect(editor).toBeVisible()
   await expect(files).toHaveCount(0)
   await expect(tabs).toContainText("alpha.ts")
   await expect(editor).toContainText("alpha file")
 
   await top.getByRole("button", { name: /^Files$/ }).click()
-  await side.locator('[data-component="filetree"]').getByRole("button", { name: /^beta\.ts$/ }).click()
+  await files.locator('[data-component="filetree"]').getByRole("button", { name: /^beta\.ts\b/i }).click()
 
   await expect(editor).toBeVisible()
   await expect(tabs).toContainText("alpha.ts")
