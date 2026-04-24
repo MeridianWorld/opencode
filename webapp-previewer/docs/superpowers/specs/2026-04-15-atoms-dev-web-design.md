@@ -2495,3 +2495,42 @@ Approved implementation strategy:
 
 Current decision:
 - Continue the design with interaction boundaries, state shape, and milestone-1 acceptance behavior
+
+### 2026-04-24 Record 53
+Design checkpoint approval:
+- I presented the milestone-1 interaction boundary and state constraints.
+- The user approved that section.
+
+Approved interaction boundary:
+- real milestone-1 interactions must include:
+  - top-level mode switching between viewer and editor
+  - blue-spine selected-state changes
+  - editable composer state
+  - editor tab switching
+  - editor tab closing
+- demo interaction is acceptable for:
+  - complex agent behaviors
+  - publish/generation flows
+  - deep files/inspect logic
+  - most secondary toolbar buttons
+- milestone-1 state should remain small and demo-driven
+
+New spec artifact created:
+- I wrote a dedicated front-end-first design spec for the rebooted workbench page:
+  - `D:/github_repo/opencode/webapp-previewer/docs/superpowers/specs/2026-04-24-atoms-workbench-v2-front-end-design.md`
+
+Spec self-review result:
+- placeholder scan:
+  - passed
+- internal consistency check:
+  - passed
+- scope check:
+  - passed
+  - the spec remains focused on milestone 1 only
+- ambiguity check:
+  - passed for the current scope
+  - milestone-1 acceptance now explicitly centers on `App Viewer / Design` and `Editor`
+
+Current decision:
+- stop design expansion here
+- ask the user to review the written spec before writing the implementation plan
