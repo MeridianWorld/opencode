@@ -2434,3 +2434,30 @@ Resulting design consequence:
 Current decision:
 - Proceed with a new `atoms-workbench-v2` style page strategy
 - make high visual fidelity to the supplied Atoms workbench references the top-level requirement
+
+### 2026-04-24 Record 49
+Design checkpoint approval:
+- I presented the first formal design section:
+  - rebuild the workbench page as a new `atoms-workbench-v2` front-end shell inside `webapp-previewer`
+  - treat the current session/workbench composition as an earlier prototype rather than the final visual base
+  - let visual fidelity drive the first milestone, with backend/data-flow integration following later
+- The user approved this direction and asked me to keep recording the decisions and continue through completion.
+
+Current decision:
+- Continue presenting the remaining design sections for the new front-end-first Atoms workbench reboot
+
+### 2026-04-24 Record 50
+Design checkpoint approval:
+- I presented the visual-fidelity standards for the rebooted Atoms workbench page.
+- The user approved that section.
+
+Approved visual-fidelity rules:
+- layout proportions must match the supplied Atoms workbench references before deeper interaction work
+- the top toolbar must read as Atoms-style floating capsules rather than a normal IDE bar
+- the left conversation surface must stop reading like a generic chat tool
+- the middle deep-blue column must behave visually like a workflow/navigation spine
+- the right work area must read like a product work surface, not a developer IDE panel collage
+- visual tokens must be rebuilt around the Atoms references rather than inherited from existing OpenCode tokens
+
+Current decision:
+- Continue the design with concrete milestone-1 workbench states and acceptance boundaries
