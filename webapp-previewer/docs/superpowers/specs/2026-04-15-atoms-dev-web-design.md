@@ -2620,3 +2620,30 @@ Resolution applied:
 Verification for this refinement:
 - rely on the existing session route shell since the change is CSS-only
 - keep the previous interaction regression coverage intact
+
+### 2026-04-24 Record 57
+New composer-shell bug reported by the user:
+- The user reported that the input area looked split into a white upper half and a black lower half.
+- The user also asked why the lower-row controls still looked grey and unattractive.
+
+Root-cause understanding:
+- the rebooted Atoms shell had already overridden some button geometry, but the composer still inherited core OpenCode dock-surface theme tokens
+- two specific layers were still using the old theme source:
+  - `DockShellForm` / `DockTray`
+  - the `PromptInput` bottom fade that uses `--surface-raised-stronger-non-alpha`
+- inside the current app theme context, those unresolved tokens could resolve to the darker OpenCode surface language, which visually split the composer into mismatched light and dark sections
+
+Resolution applied:
+- treat the entire `atoms-v2` composer as its own light token island in `src/pages/session/atoms-v2/atoms-v2.css`
+- explicitly override:
+  - `--background-base`
+  - `--surface-raised-stronger-non-alpha`
+  - surface hover/active tokens
+  - text/icon tokens
+  - primary button token
+- directly restyle `[data-dock-surface="shell"]` and `[data-dock-surface="tray"]` for the Atoms composer
+- replace the prompt bottom fade with a matching pale gradient
+- darken the lower-row control text/icon colors so the controls no longer read as muddy grey against the pale shell
+
+Verification for this fix:
+- run the focused Playwright workbench mode regression after the CSS change
