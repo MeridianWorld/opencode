@@ -2380,3 +2380,35 @@ Current decision:
 - `Task 5` is complete
 - the planned Atoms session work-page redesign pass is functionally locked for this branch state
 - next work should be driven by direct visual feedback on the live page rather than by unresolved regression failures
+
+### 2026-04-24 Record 47
+New user direction:
+- The user explicitly rejected the current front-end result.
+- New priority order from the user:
+  - first: the front-end workbench page must be rebuilt to match Atoms as closely as possible at the visual and interaction level
+  - second: backend integration can wait until the front-end shell is right
+- The user also narrowed scope again:
+  - only the workbench page matters
+  - homepage / marketing pages are out of scope
+
+What changed in my understanding:
+- The current `webapp-previewer` Atoms session page should no longer be treated as the target architecture for visual refinement.
+- It should be treated as a prototype that proved:
+  - session-route isolation
+  - basic left/right workbench splitting
+  - preview/editor/files wiring
+- But it is not the right visual foundation for the user's actual goal.
+
+New design constraint:
+- For the next redesign cycle, the front-end can diverge from current OpenCode page-shell composition if that is what it takes to achieve much closer Atoms fidelity.
+- The part that still needs to remain compatible later is the backend/data-flow integration approach, not the current UI shell.
+
+Visual-companion status:
+- I offered the browser-based visual brainstorming companion because the remaining work is highly visual.
+- The user accepted using it when helpful.
+- Per the brainstorming workflow, I will still decide per question whether terminal text or browser visuals are the better tool.
+
+Current decision:
+- Start a fresh front-end-first brainstorming/spec cycle
+- focus only on the Atoms workbench page
+- do not continue incremental polish on the current hybrid page
