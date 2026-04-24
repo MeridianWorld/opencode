@@ -2647,3 +2647,21 @@ Resolution applied:
 
 Verification for this fix:
 - run the focused Playwright workbench mode regression after the CSS change
+
+### 2026-04-24 Record 58
+New collaboration rule from the user:
+- The user set a new process rule for all following work on this Atoms reproduction.
+- Rule:
+  - every time I finish one clear feature point or fix one bug, I must create a commit immediately
+  - the commit must make clear what was changed
+  - the explanation must also state how the change was made
+
+My understanding of the rule:
+- I should stop batching multiple unrelated fixes into one commit when they can be separated by feature point or bug
+- each completed bugfix or feature slice should end with:
+  - a focused verification step
+  - a focused commit
+  - a written record in this document when needed
+
+Current decision:
+- adopt this as a standing workflow rule for the remaining Atoms front-end work
