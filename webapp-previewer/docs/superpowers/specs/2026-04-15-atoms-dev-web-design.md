@@ -2461,3 +2461,19 @@ Approved visual-fidelity rules:
 
 Current decision:
 - Continue the design with concrete milestone-1 workbench states and acceptance boundaries
+
+### 2026-04-24 Record 51
+Design checkpoint approval:
+- I presented the concrete milestone-1 page states that the first redesign pass must reproduce.
+- The user approved that section.
+
+Approved milestone-1 scope:
+- `App Viewer / Design` is the primary screenshot-level target state
+- `Editor` is the second screenshot-level target state
+- both states must share one stable outer shell rather than reflowing the whole page
+- `Files`, `Inspect`, and some secondary toolbar actions may begin as visual shells if needed
+- milestone 1 uses stable demo content where necessary instead of requiring full live business generation
+- acceptance should be done by direct visual comparison against the provided workbench references
+
+Current decision:
+- Continue the design with implementation strategy and page integration boundaries for the new workbench shell
