@@ -2412,3 +2412,25 @@ Current decision:
 - Start a fresh front-end-first brainstorming/spec cycle
 - focus only on the Atoms workbench page
 - do not continue incremental polish on the current hybrid page
+
+### 2026-04-24 Record 48
+Front-end reboot direction confirmed by the user:
+- The user selected the previously proposed `B` direction.
+- Confirmed direction:
+  - create a new front-end shell for the Atoms workbench page inside `webapp-previewer`
+  - do not keep iterating on the current hybrid session/workbench composition as the primary visual base
+- The user added one non-negotiable requirement:
+  - the new front-end must be visually close enough to Atoms to count as a serious reproduction, not just a loose homage
+
+What I now consider the primary success criterion:
+- The first milestone is no longer “functionally stable Atoms-style workbench”.
+- The first milestone is:
+  - “a workbench page whose visual layout, spacing, alignment, color relationships, panel proportions, top-bar density, chips, pills, editor surface, and navigation affordances are close enough to the supplied Atoms references that the page reads as the same product family at a glance”
+
+Resulting design consequence:
+- The next spec should optimize for visual fidelity first.
+- Existing OpenCode-compatible data flow remains valuable later, but it is no longer allowed to shape the visible front-end shell if that hurts fidelity.
+
+Current decision:
+- Proceed with a new `atoms-workbench-v2` style page strategy
+- make high visual fidelity to the supplied Atoms workbench references the top-level requirement
