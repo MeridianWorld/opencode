@@ -245,13 +245,19 @@
 }
 
 .atoms-v2-hints button {
-  min-height: 28px;
-  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 13px;
   border: 1px solid var(--v2-line-strong);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.68);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.76);
   font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
   color: #4d4941;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) inset;
 }
 
 .atoms-v2-composer {
@@ -271,7 +277,7 @@
 
 .atoms-v2-composer [data-action="prompt-submit"],
 .atoms-v2-composer [data-action="prompt-attach"] {
-  border-radius: 14px !important;
+  border-radius: 12px !important;
   border: 1px solid var(--v2-line) !important;
   background: rgba(255, 255, 255, 0.72) !important;
   box-shadow: none !important;
@@ -285,9 +291,45 @@
 .atoms-v2-composer [data-component="prompt-agent-control"] button,
 .atoms-v2-composer [data-component="prompt-model-control"] button,
 .atoms-v2-composer [data-component="prompt-variant-control"] button {
-  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 32px !important;
+  padding: 0 12px !important;
+  border-radius: 12px !important;
   border: 1px solid var(--v2-line) !important;
-  background: rgba(255, 255, 255, 0.72) !important;
+  background: rgba(255, 255, 255, 0.78) !important;
+  box-shadow: none !important;
+  line-height: 1 !important;
+}
+
+.atoms-v2-composer [data-component="prompt-agent-control"] [data-slot="select-trigger"],
+.atoms-v2-composer [data-component="prompt-model-control"] [data-action="prompt-model"],
+.atoms-v2-composer [data-component="prompt-variant-control"] [data-slot="select-trigger"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+}
+
+.atoms-v2-composer [data-component="prompt-agent-control"] [data-slot="select-trigger"] > *,
+.atoms-v2-composer [data-component="prompt-model-control"] [data-action="prompt-model"] > *,
+.atoms-v2-composer [data-component="prompt-variant-control"] [data-slot="select-trigger"] > * {
+  align-self: center !important;
+}
+
+.atoms-v2-composer [data-component="prompt-agent-control"] [data-slot="select-value"],
+.atoms-v2-composer [data-component="prompt-variant-control"] [data-slot="select-value"],
+.atoms-v2-composer [data-component="prompt-model-control"] span.truncate {
+  line-height: 1 !important;
+}
+
+.atoms-v2-composer [data-action="prompt-permissions"] {
+  min-height: 32px !important;
+  min-width: 32px !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--v2-line) !important;
+  background: rgba(255, 255, 255, 0.78) !important;
   box-shadow: none !important;
 }
 

@@ -2595,3 +2595,28 @@ Verification commands run successfully:
 Current decision:
 - keep this new `atoms-v2` workbench as the active visual path
 - use the old atoms/session implementation only as historical prototype context, not as the visible workbench base
+
+### 2026-04-24 Record 56
+New visual feedback from the user:
+- The user reviewed the new Atoms workbench shell and said the overall direction is much better.
+- The user then reported a remaining visual mismatch in the lower-left composer area:
+  - the bottom-left buttons looked too ugly
+  - the text inside the controls did not feel vertically centered
+  - the large pill radius felt abrupt and out of place against the rest of the Atoms shell
+
+My understanding of the issue:
+- the problem is not the whole shell anymore
+- the main mismatch is the composer micro-geometry:
+  - quick-action hint chips above the input
+  - the bottom tray controls for agent / model / variant / permissions
+- these controls were still inheriting overly round OpenCode-like pill geometry instead of the flatter Atoms-like control language used elsewhere in the rebooted shell
+
+Resolution applied:
+- tighten the composer quick-action buttons and bottom tray controls in `src/pages/session/atoms-v2/atoms-v2.css`
+- switch those controls from very round pills to smaller-radius rounded rectangles
+- force inline-flex centering so text and icons sit on the optical center line
+- align the permissions button geometry with the rest of the bottom control row
+
+Verification for this refinement:
+- rely on the existing session route shell since the change is CSS-only
+- keep the previous interaction regression coverage intact
