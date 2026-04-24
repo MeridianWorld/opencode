@@ -2347,3 +2347,36 @@ Current decision:
 - `Task 4` is complete
 - next step is `Task 5`
   - final polish, docs, and regression lock
+
+### 2026-04-24 Record 46
+Task 5 regression lock:
+- I ran the focused unit + typecheck + session-page e2e regression set for the current Atoms work page.
+- In this pass, no additional production-code fix was required after Task 4:
+  - the unified workbench shell
+  - preview backend wiring
+  - left-panel session shell
+  were all already stable under the targeted regression suite
+
+Verification results:
+- `bun test --preload ./happydom.ts ./src/webapp-previewer/use-webapp-preview.test.ts ./src/pages/session/atoms/state.test.ts ./src/pages/session/atoms/atoms-thread.test.ts ./src/pages/session/atoms/atoms-preview-layout.test.ts`
+  - passed
+- `bun typecheck`
+  - passed
+- `bun x playwright test e2e/app/atoms-session-shell.spec.ts e2e/app/atoms-session-panel.spec.ts e2e/app/atoms-workbench.spec.ts e2e/app/atoms-workbench-shell.spec.ts e2e/app/atoms-preview.spec.ts e2e/app/atoms-workspace-tabs.spec.ts --workers=1 --reporter=line`
+  - passed
+
+Scope locked by this regression pass:
+- session route hides the default OpenCode chrome while preserving history affordances
+- left session panel renders the Atoms-style builder framing and keeps scroll/history behavior intact
+- right workbench keeps one persistent shell across:
+  - preview
+  - editor
+  - files
+  - inspect
+- preview attaches to generated HTML targets through the official backend viewer path
+- editor tabs remain closable and files reopen into the same workbench surface
+
+Current decision:
+- `Task 5` is complete
+- the planned Atoms session work-page redesign pass is functionally locked for this branch state
+- next work should be driven by direct visual feedback on the live page rather than by unresolved regression failures
