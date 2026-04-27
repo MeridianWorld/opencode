@@ -46,6 +46,24 @@ test("atoms-v2 gives the composer text layer proper inset", async ({ page, proje
   expect(await hint.evaluate((node) => getComputedStyle(node).paddingTop)).toBe("16px")
 })
 
+test("atoms-v2 shows live session prompts and assistant replies in the conversation", async ({ page, project }) => {
+  await page.setViewportSize({ width: 1728, height: 1117 })
+  await project.open()
+
+  const input = page.locator('.atoms-v2-composer [data-component="prompt-input"]')
+  await input.click()
+  await page.keyboard.type("wire the atoms chat")
+  await expect(input).toContainText("wire the atoms chat")
+  await page.keyboard.press("ControlOrMeta+A")
+  await page.keyboard.press("Backspace")
+
+  await project.prompt("wire the atoms chat")
+
+  const chat = page.locator('[data-component="atoms-v2-conversation"]')
+  await expect(chat).toContainText("wire the atoms chat")
+  await expect(chat).toContainText("ok")
+})
+
 test("atoms-v2 loads workspace files through the official backend", async ({ page, project }) => {
   await page.setViewportSize({ width: 1728, height: 1117 })
   await project.open({

@@ -2797,3 +2797,50 @@ Verification run for this feature:
 - `bun test --preload ./happydom.ts ./src/pages/session/atoms-v2/workspace.test.ts ./src/pages/session/atoms-v2/state.test.ts ./src/pages/session/atoms-v2/editor.test.tsx`
 - `bun typecheck`
 - `bun x playwright test e2e/app/atoms-workbench-shell.spec.ts e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=line`
+
+### 2026-04-27 Record 63
+New bug report from the user:
+- The user reported that text entered into the conversation composer did not show up in the conversation.
+- The user also reported that backend assistant replies did not appear in the left conversation panel.
+- The user asked whether the backend was actually connected.
+
+Root-cause understanding:
+- The previous backend-connected slice only connected the right workspace area:
+  - file tree
+  - editor file loading
+  - HTML preview
+- The left Atoms v2 conversation panel was still rendering static design-fixture cards from `scene().cards`.
+- The official `PromptInput` was still capable of submitting through the OpenCode backend, but the new Atoms v2 conversation did not subscribe to or render:
+  - `sync.data.message[sessionID]`
+  - `sync.data.part[messageID]`
+  - current question / permission / session status records
+- Therefore the backend submission path existed, but the new Atoms-style left panel did not display the live session results.
+
+Decision:
+- Keep the official `PromptInput` and official OpenCode submission path unchanged.
+- Reuse the existing `buildAtomsRows` mapper from the earlier Atoms prototype instead of introducing a second message adapter.
+- Render live rows inside the Atoms v2 visual shell:
+  - user messages align to the right
+  - assistant messages align to the left
+  - activity and decision rows render as compact cards
+- Keep static design cards only as the empty-session fallback.
+
+Resolution applied:
+- `src/pages/session.tsx` now:
+  - reads the current session id from `useSessionLayout`
+  - calls `sync.session.sync(sessionID)` for the active session
+  - maps official backend message and part stores into Atoms rows
+  - passes those rows into the Atoms v2 page
+- `src/pages/session/atoms-v2/conversation.tsx` now renders live session rows when available.
+- `src/pages/session/atoms-v2/atoms-v2.css` now includes Atoms-style message, assistant, user, activity, and decision row styling.
+- Added a Playwright regression that:
+  - verifies typed composer text is visible while editing
+  - submits a prompt through the official backend path
+  - requires the left Atoms v2 conversation to show both the user prompt and the assistant reply
+
+Verification run for this bugfix:
+- first ran the new Playwright test before implementation and confirmed it failed because only static cards were rendered
+- after implementation:
+  - `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts -g "live session prompts" --workers=1 --reporter=line`
+  - `bun typecheck`
+  - `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=line`

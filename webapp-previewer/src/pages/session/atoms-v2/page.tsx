@@ -4,6 +4,7 @@ import type { AtomsV2Model, Mode } from "./state"
 import { AtomsV2Conversation } from "./conversation"
 import { AtomsV2Editor } from "./editor"
 import { AtomsV2Files } from "./files"
+import type { AtomsRow } from "../atoms/atoms-thread"
 import { AtomsV2Toolbar } from "./toolbar"
 import { AtomsV2Viewer } from "./viewer"
 
@@ -33,12 +34,12 @@ function Placeholder(props: { title: string; text: string }) {
   )
 }
 
-export function AtomsV2Page(props: { ui: AtomsV2Model; title: string; composer: JSX.Element }) {
+export function AtomsV2Page(props: { ui: AtomsV2Model; title: string; rows: AtomsRow[]; composer: JSX.Element }) {
   return (
     <div data-component="atoms-v2-page" class="atoms-v2-page">
       <AtomsV2Toolbar title={props.title} mode={props.ui.mode()} />
       <div data-component="atoms-v2-shell" class="atoms-v2-shell">
-        <AtomsV2Conversation ui={props.ui} title={props.title} composer={props.composer} />
+        <AtomsV2Conversation ui={props.ui} title={props.title} rows={props.rows} composer={props.composer} />
         <section data-component="atoms-v2-stage" class="atoms-v2-stage">
           <header class="atoms-v2-stage__head">
             <div>
