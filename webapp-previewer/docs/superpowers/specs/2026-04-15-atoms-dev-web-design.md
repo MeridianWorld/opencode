@@ -2732,3 +2732,25 @@ Current decision:
 Verification run for this change:
 - `bun x playwright test e2e/app/atoms-workbench-shell.spec.ts e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=line`
 - `bun typecheck`
+
+### 2026-04-27 Record 61
+Operational request from the user:
+- The user asked me to start the service so they can inspect the latest Atoms workbench UI in the browser.
+
+My understanding:
+- start both parts needed for the current preview loop:
+  - official OpenCode backend on port `4096`
+  - `webapp-previewer` frontend on port `5173`
+- keep the existing implementation unchanged
+- provide the browser URL after confirming both ports are listening
+
+Action taken:
+- started the backend from `D:/github_repo/opencode/packages/opencode`
+- started the frontend from `D:/github_repo/opencode/webapp-previewer`
+- wrote runtime logs to:
+  - `webapp-previewer/.codex-backend.log`
+  - `webapp-previewer/.codex-frontend.log`
+
+Verification:
+- backend is listening at `http://127.0.0.1:4096`
+- frontend is listening at `http://localhost:5173`
