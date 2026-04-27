@@ -3069,3 +3069,63 @@ Verification:
 Follow-up note:
 - This is a Vercel preview deployment, not a promoted production deployment.
 - If production aliasing is needed later, use Vercel promote or a production deploy after confirming that is desired.
+
+### 2026-04-27 Record 70
+New error report from the user:
+- The user pointed to the failed Vercel deployment inspect page:
+  - `https://vercel.com/qygemail-8402s-projects/webapp-previewer/FPwGJaDzLPEYYga1MhUKh4VGV6ng`
+- The user reported that Vercel showed many errors.
+
+Investigation:
+- The inspect page maps to deployment id `dpl_FPwGJaDzLPEYYga1MhUKh4VGV6ng`.
+- Deployment URL:
+  - `https://webapp-previewer-2ahxc73r5-qygemail-8402s-projects.vercel.app`
+- Target:
+  - production
+- Status:
+  - error
+- Build logs from `vercel inspect ... --logs` showed the real root cause:
+  - Vercel cloud ran `bun install` inside the isolated uploaded `webapp-previewer` directory.
+  - Bun searched workspaces in `./*`.
+  - Workspace dependencies were missing:
+    - `@opencode-ai/sdk`
+    - `@opencode-ai/ui`
+    - `@opencode-ai/util`
+  - Catalog dependencies were also unresolved, for example:
+    - `@tailwindcss/vite@catalog:`
+    - `@types/bun@catalog:`
+    - `vite@catalog:`
+    - `solid-js@catalog:`
+    - `zod@catalog:`
+
+Understanding:
+- The "many errors" are cascading dependency-resolution errors from one root cause.
+- This deployment uploaded the subfolder as if it were standalone.
+- `webapp-previewer` is not standalone; it relies on root monorepo workspace and catalog configuration.
+- The later prebuilt preview deployment avoided this by building locally from the monorepo and uploading `.vercel/output`.
+
+Resolution:
+- Created a production prebuilt deployment instead of leaving production alias on the failed cloud-install deployment.
+- Ran:
+  - `vercel build --prod --yes --cwd webapp-previewer`
+  - `vercel deploy --prebuilt --prod --cwd webapp-previewer --archive=tgz --logs`
+- New production deployment:
+  - id: `dpl_CrbFoJj7gCTWb6QveGuspCa4HzYL`
+  - deployment URL: `https://webapp-previewer-1tnygfuw6-qygemail-8402s-projects.vercel.app`
+  - production alias: `https://webapp-previewer.vercel.app`
+
+Verification:
+- `vercel inspect webapp-previewer-1tnygfuw6-qygemail-8402s-projects.vercel.app --cwd webapp-previewer` reports:
+  - target: production
+  - status: Ready
+  - aliases include `https://webapp-previewer.vercel.app`
+- `Invoke-WebRequest https://webapp-previewer.vercel.app` returned:
+  - HTTP `200`
+  - HTML length `2423`
+- `Invoke-WebRequest https://webapp-previewer-1tnygfuw6-qygemail-8402s-projects.vercel.app` returned:
+  - HTTP `200`
+  - HTML length `2423`
+
+Current state:
+- The old failed deployment still exists in Vercel history and will continue to show its historical errors if opened directly.
+- The active production alias now points to the new ready deployment.
