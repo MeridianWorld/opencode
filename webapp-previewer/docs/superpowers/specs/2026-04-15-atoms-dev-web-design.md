@@ -2844,3 +2844,49 @@ Verification run for this bugfix:
   - `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts -g "live session prompts" --workers=1 --reporter=line`
   - `bun typecheck`
   - `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=line`
+
+### 2026-04-27 Record 64
+New request from the user:
+- The user asked which folder Preview currently loads.
+- After learning it uses the current OpenCode session/project workspace, the user clarified that the UI currently does not show a clear project directory in the top-left area.
+- The user requested that the default Preview workspace load `..\test-html`.
+
+My understanding:
+- `..\test-html` means the demo project at `D:/github_repo/opencode/test-html`, relative to `webapp-previewer`.
+- This should be a default/fallback only.
+- If a real OpenCode project/worktree is available, it must still win so generated project files continue to preview normally.
+
+Design decision:
+- Inject the default demo directory from `vite.config.ts` using `path.resolve(__dirname, "../test-html")`.
+- Add a small Atoms v2 fallback rule:
+  - use `sync.project.worktree` when it exists
+  - otherwise use the injected `test-html` directory
+- Keep this fallback inside the Atoms v2 workspace/preview source only.
+- Do not change the official chat submission path or global OpenCode project routing.
+
+Implementation notes:
+- Added `src/pages/session/atoms-v2/fallback.ts` with the fallback directory rule.
+- `src/pages/session.tsx` now has two workspace data sources:
+  - current project via `useFile`
+  - fallback demo directory via `sdk.createClient({ directory: testHtmlDir })`
+- The fallback source uses the official backend file API:
+  - `file.list`
+  - `file.read`
+- The toolbar/conversation title now uses the active workspace directory basename, so the fallback case reads as `test-html`.
+
+Error found and resolved:
+- Existing workspace e2e initially failed after the fallback was added.
+- Root cause:
+  - the page could briefly open fallback `index.html`
+  - then switch to a real project directory
+  - the already-open tab prevented the real project's `index.html` content from being loaded
+- Resolution:
+  - the initial-open effect now re-runs `ui.open(path)` when the initial file exists but the current source has no loaded document content yet
+  - explicit project directories still override the fallback
+
+Verification run for this change:
+- first ran the new fallback unit test before implementation and confirmed it failed because `fallback.ts` did not exist
+- after implementation:
+  - `bun test --preload ./happydom.ts ./src/pages/session/atoms-v2/fallback.test.ts`
+  - `bun typecheck`
+  - `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=line`

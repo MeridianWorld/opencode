@@ -4,6 +4,9 @@ import path from "path"
 
 export default defineConfig({
   plugins: [desktopPlugin] as any,
+  define: {
+    "import.meta.env.VITE_OPENCODE_ATOMS_DEMO_DIR": JSON.stringify(path.resolve(__dirname, "../test-html")),
+  },
   server: {
     host: "0.0.0.0",
     allowedHosts: true,

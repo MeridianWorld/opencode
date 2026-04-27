@@ -2,11 +2,13 @@ import { PromptInput } from "@/components/prompt-input"
 import { useFile } from "@/context/file"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
-import type { FileNode } from "@opencode-ai/sdk/v2"
+import type { FileContent, FileNode } from "@opencode-ai/sdk/v2"
 import { getFilename } from "@opencode-ai/util/path"
 import { createEffect, createMemo } from "solid-js"
+import { createStore } from "solid-js/store"
 import { buildAtomsRows, reuseAtomsRows, type AtomsRow } from "./session/atoms/atoms-thread"
 import { useSessionLayout } from "./session/session-layout"
+import { demo, pick } from "./session/atoms-v2/fallback"
 import { AtomsV2Page } from "./session/atoms-v2/page"
 import { createAtomsV2Model } from "./session/atoms-v2/state"
 import { createWorkspaceData } from "./session/atoms-v2/workspace"
@@ -16,24 +18,87 @@ export default function Page() {
   const sync = useSync()
   const file = useFile()
   const route = useSessionLayout()
-  const title = createMemo(() => getFilename(sync.project?.worktree ?? sdk.directory))
-  const nodes = createMemo(() => {
+  const project = createMemo(() => sync.project?.worktree)
+  const fallback = createMemo(() => sync.ready && !project())
+  const dir = createMemo(() => pick({ project: project(), fallback: demo() }))
+  const title = createMemo(() => getFilename(dir()))
+  const [state, setState] = createStore({
+    children: {} as Record<string, FileNode[] | undefined>,
+    content: {} as Record<string, FileContent | undefined>,
+    expanded: {} as Record<string, boolean | undefined>,
+    loaded: {} as Record<string, boolean | undefined>,
+  })
+  const local = createMemo(() => {
     const visit = (dir: string): FileNode[] =>
       file.tree.children(dir).flatMap((item) =>
         item.type === "directory" && file.tree.state(item.path)?.expanded ? [item, ...visit(item.path)] : [item],
       )
     return visit("")
   })
+  const remote = createMemo(() => {
+    const visit = (dir: string): FileNode[] =>
+      (state.children[dir] ?? []).flatMap((item) =>
+        item.type === "directory" && state.expanded[item.path] ? [item, ...visit(item.path)] : [item],
+      )
+    return visit("")
+  })
+  const nodes = createMemo(() => (fallback() ? remote() : local()))
+
+  const list = (path: string) => {
+    const root = dir()
+    return sdk
+      .createClient({ directory: root, throwOnError: true })
+      .file.list({ path })
+      .then((res) => {
+        if (!fallback()) return
+        if (dir() !== root) return
+        setState("children", path, res.data ?? [])
+      })
+      .catch(() => {})
+  }
+
+  const load = (path: string) => {
+    if (!fallback()) {
+      void file.load(path)
+      return
+    }
+    if (state.loaded[path]) return
+    const root = dir()
+    setState("loaded", path, true)
+    void sdk
+      .createClient({ directory: root, throwOnError: true })
+      .file.read({ path })
+      .then((res) => {
+        if (!fallback()) return
+        if (dir() !== root) return
+        setState("content", path, res.data)
+      })
+      .catch(() => setState("loaded", path, false))
+  }
+
+  const toggle = (path: string) => {
+    if (!fallback()) {
+      file.tree.toggle(path)
+      return
+    }
+    if (state.expanded[path]) {
+      setState("expanded", path, false)
+      return
+    }
+    setState("expanded", path, true)
+    void list(path)
+  }
+
   const data = createMemo(() =>
     createWorkspaceData({
       nodes: nodes(),
-      content: (path) => file.get(path)?.content,
+      content: (path) => (fallback() ? state.content[path] : file.get(path)?.content),
     }),
   )
   const ui = createAtomsV2Model({
     data,
-    load: (path) => void file.load(path),
-    toggle: (path) => file.tree.toggle(path),
+    load,
+    toggle,
   })
   const rows = createMemo((prev: AtomsRow[] = []) => {
     const id = route.params.id
@@ -57,13 +122,17 @@ export default function Page() {
   })
 
   createEffect(() => {
+    if (fallback()) {
+      void list("")
+      return
+    }
     void file.tree.list("")
   })
 
   createEffect(() => {
     const path = ui.initial()
     if (!path) return
-    if (ui.tabs().length > 0) return
+    if (ui.tabs().length > 0 && ui.docs()[path]) return
     ui.open(path)
   })
 
