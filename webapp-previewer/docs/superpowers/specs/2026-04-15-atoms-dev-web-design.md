@@ -2975,3 +2975,25 @@ Verification run for this bugfix:
   - `bun test --preload ./happydom.ts ./src/pages/session/atoms-v2/workspace.test.ts`
   - `bun typecheck`
   - `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=list`
+
+### 2026-04-27 Record 67
+New request from the user:
+- The user asked whether the latest local commits had been pushed.
+- After confirming they had not been pushed, the user asked to synchronize the current work to the remote repository.
+
+Understanding:
+- The current working branch is `webapp-previewer`.
+- The latest local implementation commit is `c930de9ff fix: render atoms preview with desktop canvas`.
+- `git branch -vv` showed no upstream configured for this branch.
+- The repository has two remotes:
+  - `origin` points to `https://github.com/MeridianWorld/opencode.git`
+  - `upstream` points to `https://github.com/anomalyco/opencode.git`
+
+Decision:
+- Push the working branch to `origin`, not `upstream`.
+- Set upstream tracking with `git push -u origin webapp-previewer`.
+- Do not stage or push unrelated dirty working-tree files beyond the documentation update required by the project process.
+
+Planned verification:
+- Confirm the push command exits successfully.
+- Confirm `git status --short --branch` reports the branch tracking `origin/webapp-previewer`.
