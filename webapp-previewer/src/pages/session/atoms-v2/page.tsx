@@ -3,7 +3,6 @@ import { Match, Switch, type JSX } from "solid-js"
 import type { AtomsV2Model, Mode } from "./state"
 import { AtomsV2Conversation } from "./conversation"
 import { AtomsV2Editor } from "./editor"
-import { AtomsV2Spine } from "./spine"
 import { AtomsV2Toolbar } from "./toolbar"
 import { AtomsV2Viewer } from "./viewer"
 
@@ -39,7 +38,6 @@ export function AtomsV2Page(props: { ui: AtomsV2Model; title: string; composer: 
       <AtomsV2Toolbar title={props.title} mode={props.ui.mode()} />
       <div data-component="atoms-v2-shell" class="atoms-v2-shell">
         <AtomsV2Conversation ui={props.ui} title={props.title} composer={props.composer} />
-        <AtomsV2Spine ui={props.ui} title={props.title} />
         <section data-component="atoms-v2-stage" class="atoms-v2-stage">
           <header class="atoms-v2-stage__head">
             <div>

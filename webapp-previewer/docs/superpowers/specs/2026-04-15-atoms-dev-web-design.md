@@ -2694,3 +2694,41 @@ Verification plan for this bugfix:
   - the editable prompt layer
   - the visible placeholder layer
 - run that focused spec after the CSS change and use it as the guard for future spacing regressions
+
+### 2026-04-27 Record 60
+New structure correction from the user:
+- The user clarified that Atoms does not have a middle column.
+- The correct workbench structure should be:
+  - left side:
+    - conversation
+  - right side:
+    - workspace
+  - workspace view switching:
+    - handled from the top-right controls inside the right work area
+
+Root-cause understanding:
+- the current `atoms-v2` shell still rendered `AtomsV2Spine` between the conversation and workspace
+- that component created a third visual column and made the page read like an OpenCode/workflow hybrid again
+- the right work area already had the correct switching entry point in `.atoms-v2-stage__nav`
+- therefore the middle spine should be removed rather than restyled
+
+Resolution applied:
+- remove `AtomsV2Spine` from `src/pages/session/atoms-v2/page.tsx`
+- delete the now-unused `src/pages/session/atoms-v2/spine.tsx`
+- change `.atoms-v2-shell` from three grid tracks to two:
+  - conversation
+  - workspace
+- remove unused spine styles from `src/pages/session/atoms-v2/atoms-v2.css`
+- remove the old `@media (max-width: 1500px)` three-column override that was still reintroducing a middle track on smaller desktop widths
+- update the Playwright shell regression so it now requires:
+  - no `atoms-v2-spine` in the DOM
+  - the right work area remains visible
+  - view switching stays available from the right work area's top-right nav
+
+Current decision:
+- keep `App Viewer / Editor / Files / Inspect` as the only visible work-area mode switch
+- do not introduce a replacement middle rail
+
+Verification run for this change:
+- `bun x playwright test e2e/app/atoms-workbench-shell.spec.ts e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=line`
+- `bun typecheck`
