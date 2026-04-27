@@ -11,7 +11,7 @@ import { useSessionLayout } from "./session/session-layout"
 import { demo, pick } from "./session/atoms-v2/fallback"
 import { AtomsV2Page } from "./session/atoms-v2/page"
 import { createAtomsV2Model } from "./session/atoms-v2/state"
-import { createWorkspaceData } from "./session/atoms-v2/workspace"
+import { createWorkspaceData, rewriteHtml } from "./session/atoms-v2/workspace"
 
 export default function Page() {
   const sdk = useSDK()
@@ -93,6 +93,13 @@ export default function Page() {
     createWorkspaceData({
       nodes: nodes(),
       content: (path) => (fallback() ? state.content[path] : file.get(path)?.content),
+      html: (path, content) =>
+        rewriteHtml({
+          html: content,
+          server: sdk.url,
+          directory: dir(),
+          path,
+        }),
     }),
   )
   const ui = createAtomsV2Model({

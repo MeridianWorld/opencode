@@ -2890,3 +2890,43 @@ Verification run for this change:
   - `bun test --preload ./happydom.ts ./src/pages/session/atoms-v2/fallback.test.ts`
   - `bun typecheck`
   - `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=line`
+
+### 2026-04-27 Record 65
+New bug report from the user:
+- The user reported that the right-side Preview rendering still looked wrong.
+- The screenshot showed the `test-html/index.html` structure, but it appeared as mostly unstyled browser-default HTML.
+
+Root-cause understanding:
+- The Atoms v2 viewer was rendering the selected HTML through `iframe srcdoc`.
+- `test-html/index.html` depends on relative assets:
+  - `styles.css`
+  - `app.js`
+- A `srcdoc` document has no useful file-system base URL for those relative paths.
+- The iframe was also sandboxed with no script permission.
+- Therefore the browser rendered the HTML body, but failed to load the CSS and JS that make the preview look like the real app.
+
+Decision:
+- Keep using official OpenCode backend file serving instead of adding a separate static server.
+- Reuse the backend `/view/<path>?directory=<workspace>` endpoint for relative preview assets.
+- Keep the HTML itself as `srcdoc`, but rewrite relative `href` and `src` attributes to backend viewer URLs before rendering.
+- Allow the preview iframe to run scripts and use same-origin storage enough for simple generated app previews.
+
+Resolution applied:
+- Added preview asset rewriting in `src/pages/session/atoms-v2/workspace.ts`.
+- `src/pages/session.tsx` now rewrites HTML preview content with:
+  - current backend server URL
+  - active workspace directory
+  - selected HTML file path
+- `src/pages/session/atoms-v2/viewer.tsx` now gives the iframe:
+  - `allow-scripts`
+  - `allow-forms`
+  - `allow-same-origin`
+- Updated e2e coverage so the backend preview test now requires:
+  - a linked CSS file to change iframe body background color
+  - a linked JS file to mark the iframe body after execution
+
+Verification run for this bugfix:
+- `bun test --preload ./happydom.ts ./src/pages/session/atoms-v2/workspace.test.ts`
+- `bun typecheck`
+- `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts -g "loads workspace files" --workers=1 --reporter=line`
+- `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=line`

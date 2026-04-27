@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test"
 import type { FileContent, FileNode } from "@opencode-ai/sdk/v2"
-import { createWorkspaceData, fileText } from "./workspace"
+import { createWorkspaceData, fileText, rewriteHtml, viewUrl } from "./workspace"
 
 const node = (input: Pick<FileNode, "name" | "path" | "type">): FileNode => ({
   ...input,
@@ -42,5 +42,30 @@ describe("atoms-v2 workspace adapter", () => {
     expect(fileText({ type: "binary", content: "", mimeType: "image/png" })).toBe(
       "Binary file cannot be displayed in the editor.",
     )
+  })
+
+  it("rewrites relative html assets through the backend viewer endpoint", () => {
+    const html = rewriteHtml({
+      html: '<link rel="stylesheet" href="./styles.css"><script src="app.js"></script><a href="https://atoms.dev">',
+      server: "http://localhost:4096/",
+      directory: "D:/github_repo/opencode/test-html",
+      path: "index.html",
+    })
+
+    expect(html).toContain(
+      `href="${viewUrl({
+        server: "http://localhost:4096",
+        directory: "D:/github_repo/opencode/test-html",
+        path: "styles.css",
+      })}"`,
+    )
+    expect(html).toContain(
+      `src="${viewUrl({
+        server: "http://localhost:4096",
+        directory: "D:/github_repo/opencode/test-html",
+        path: "app.js",
+      })}"`,
+    )
+    expect(html).toContain('href="https://atoms.dev"')
   })
 })

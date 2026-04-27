@@ -39,7 +39,7 @@ export function AtomsV2Viewer(props: { scene: Scene; preview?: Preview }) {
             <iframe
               class="atoms-v2-preview-frame"
               title={`Preview ${preview().label}`}
-              sandbox=""
+              sandbox="allow-forms allow-same-origin allow-scripts"
               srcdoc={preview().html}
             />
           </div>

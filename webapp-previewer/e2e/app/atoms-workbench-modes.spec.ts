@@ -68,12 +68,19 @@ test("atoms-v2 loads workspace files through the official backend", async ({ pag
   await page.setViewportSize({ width: 1728, height: 1117 })
   await project.open({
     setup: async (dir) => {
-      await fs.writeFile(path.join(dir, "index.html"), "<h1>Backend Preview</h1>")
-      await fs.writeFile(path.join(dir, "app.js"), "console.log('backend-app')")
+      await fs.writeFile(
+        path.join(dir, "index.html"),
+        '<link rel="stylesheet" href="styles.css"><h1>Backend Preview</h1><script src="app.js"></script>',
+      )
+      await fs.writeFile(path.join(dir, "styles.css"), "body { background: rgb(1, 2, 3); } h1 { color: rgb(4, 5, 6); }")
+      await fs.writeFile(path.join(dir, "app.js"), "document.body.dataset.script = 'loaded'; console.log('backend-app')")
     },
   })
 
-  await expect(page.frameLocator(".atoms-v2-preview-frame").getByRole("heading", { name: "Backend Preview" })).toBeVisible()
+  const frame = page.frameLocator(".atoms-v2-preview-frame")
+  await expect(frame.getByRole("heading", { name: "Backend Preview" })).toBeVisible()
+  await expect(frame.locator("body")).toHaveCSS("background-color", "rgb(1, 2, 3)")
+  await expect(frame.locator("body")).toHaveAttribute("data-script", "loaded")
 
   const nav = page.locator(".atoms-v2-stage__nav")
   await nav.getByRole("button", { name: "Editor", exact: true }).click()
