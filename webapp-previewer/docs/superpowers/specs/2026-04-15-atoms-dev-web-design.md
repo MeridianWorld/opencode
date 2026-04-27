@@ -2930,3 +2930,48 @@ Verification run for this bugfix:
 - `bun typecheck`
 - `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts -g "loads workspace files" --workers=1 --reporter=line`
 - `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=line`
+
+### 2026-04-27 Record 66
+New bug report from the user:
+- The user reported again that the right-side Preview rendering was still wrong.
+- The screenshot showed the `test-html` app loading, but the layout still did not match the intended desktop app surface.
+
+Root-cause findings:
+- First finding:
+  - CSS and JS had previously been rewritten against the git worktree root instead of the selected preview directory.
+  - For `D:/github_repo/opencode/test-html`, that meant relative assets were requested from `D:/github_repo/opencode`.
+  - The correct source for the selected session route is `sdk.directory`, not `sync.project.worktree`, because a nested project can still belong to the parent git worktree.
+- Second finding:
+  - After the asset directory was fixed, the CSS loaded correctly.
+  - The app still looked wrong because the iframe's own `window.innerWidth` was only `799px`.
+  - `test-html/styles.css` intentionally switches to a compact responsive layout below `1200px`, hiding the sidebar and changing the product layout.
+- Third finding during implementation:
+  - The first desktop-viewport implementation used `inlineSize` and `blockSize` in the Solid style object.
+  - Playwright showed the iframe width became the browser default `300px`.
+  - This confirmed those style keys were not applied as expected in this path.
+
+Decisions:
+- Keep using the official backend viewer endpoint for assets.
+- Treat the Preview tab as a desktop product canvas by default.
+- Render the iframe with a real `1440px` internal viewport, then scale the iframe visually to fit the available Atoms workspace panel.
+- Use explicit iframe `width` and `height` attributes for the logical viewport, with CSS transform only for visual scaling.
+
+Resolution applied:
+- `src/pages/session.tsx` now bases the active preview directory on `sdk.directory`, with `test-html` only as fallback.
+- `src/pages/session/atoms-v2/viewer.tsx` now measures the visible preview container with `ResizeObserver`.
+- The iframe now renders at `1440px` logical width and scales down inside `.atoms-v2-preview-viewport`.
+- `src/pages/session/atoms-v2/atoms-v2.css` now gives the preview viewport a clipped white canvas and keeps iframe transform origin at the top-left.
+- Added e2e coverage for the selected `../test-html` workspace requiring:
+  - CSS-loaded body background
+  - iframe `window.innerWidth >= 1200`
+  - visible desktop sidebar
+  - all `14` template cards
+
+Verification run for this bugfix:
+- First ran the new e2e expectation before the final fix and confirmed it failed with iframe `window.innerWidth` at `799`.
+- After the first implementation attempt, the same test failed with iframe width `300`, proving the style keys were not applied.
+- After switching to iframe `width` and `height` attributes:
+  - `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts -g "relative preview assets" --workers=1 --reporter=line`
+  - `bun test --preload ./happydom.ts ./src/pages/session/atoms-v2/workspace.test.ts`
+  - `bun typecheck`
+  - `bun x playwright test e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=list`

@@ -18,9 +18,9 @@ export default function Page() {
   const sync = useSync()
   const file = useFile()
   const route = useSessionLayout()
-  const project = createMemo(() => sync.project?.worktree)
-  const fallback = createMemo(() => sync.ready && !project())
-  const dir = createMemo(() => pick({ project: project(), fallback: demo() }))
+  const source = createMemo(() => sdk.directory)
+  const fallback = createMemo(() => sync.ready && !source())
+  const dir = createMemo(() => pick({ project: source(), fallback: demo() }))
   const title = createMemo(() => getFilename(dir()))
   const [state, setState] = createStore({
     children: {} as Record<string, FileNode[] | undefined>,

@@ -1,8 +1,24 @@
-import { Show } from "solid-js"
+import { createSignal, onCleanup, Show } from "solid-js"
 import type { Scene } from "./fixtures"
 import type { Preview } from "./workspace"
 
 export function AtomsV2Viewer(props: { scene: Scene; preview?: Preview }) {
+  const [box, setBox] = createSignal({ w: 1440, h: 760 })
+  const zoom = () => Math.min(1, Math.max(0.45, box().w / 1440))
+  const tall = () => Math.max(760, box().h / zoom())
+  let obs: ResizeObserver | undefined
+  const sync = (el: HTMLDivElement) => {
+    const rect = el.getBoundingClientRect()
+    setBox({ w: rect.width || 1440, h: rect.height || 760 })
+  }
+  const bind = (el: HTMLDivElement) => {
+    sync(el)
+    obs?.disconnect()
+    obs = new ResizeObserver(() => sync(el))
+    obs.observe(el)
+  }
+  onCleanup(() => obs?.disconnect())
+
   return (
     <section data-component="atoms-v2-viewer" class="atoms-v2-viewer">
       <div class="atoms-v2-panel atoms-v2-panel--sidebar">
@@ -36,12 +52,19 @@ export function AtomsV2Viewer(props: { scene: Scene; preview?: Preview }) {
               </div>
               <div class="atoms-v2-viewer__gear" />
             </div>
-            <iframe
-              class="atoms-v2-preview-frame"
-              title={`Preview ${preview().label}`}
-              sandbox="allow-forms allow-same-origin allow-scripts"
-              srcdoc={preview().html}
-            />
+            <div class="atoms-v2-preview-viewport" ref={bind}>
+              <iframe
+                class="atoms-v2-preview-frame"
+                title={`Preview ${preview().label}`}
+                width="1440"
+                height={`${Math.round(tall())}`}
+                sandbox="allow-forms allow-same-origin allow-scripts"
+                srcdoc={preview().html}
+                style={{
+                  transform: `scale(${zoom()})`,
+                }}
+              />
+            </div>
           </div>
         )}
       </Show>

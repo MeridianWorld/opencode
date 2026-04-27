@@ -1,4 +1,5 @@
 import { expect } from "@playwright/test"
+import { base64Encode } from "@opencode-ai/util/encode"
 import fs from "node:fs/promises"
 import path from "node:path"
 import { test } from "../fixtures"
@@ -89,4 +90,17 @@ test("atoms-v2 loads workspace files through the official backend", async ({ pag
   await expect(editor.locator(".atoms-v2-editor__tree").getByRole("button", { name: /index\.html/ })).toBeVisible()
   await editor.locator(".atoms-v2-editor__tree").getByRole("button", { name: /app\.js/ }).click()
   await expect(editor.locator(".atoms-v2-editor__code")).toContainText("backend-app")
+})
+
+test("atoms-v2 loads relative preview assets from the selected workspace directory", async ({ page }) => {
+  await page.setViewportSize({ width: 1728, height: 1117 })
+
+  await page.goto(`/${base64Encode(path.resolve("..", "test-html"))}/session`)
+  await expect(page.locator('[data-component="atoms-v2-page"]')).toBeVisible()
+
+  const frame = page.frameLocator(".atoms-v2-preview-frame")
+  await expect(frame.locator("body")).toHaveCSS("background-color", "rgb(248, 250, 252)")
+  await expect.poll(() => frame.locator("body").evaluate(() => window.innerWidth)).toBeGreaterThanOrEqual(1200)
+  await expect(frame.locator(".sidebar")).toBeVisible()
+  await expect(frame.locator(".template-card")).toHaveCount(14)
 })

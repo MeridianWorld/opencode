@@ -703,11 +703,17 @@
   grid-template-columns: minmax(0, 1fr) 230px;
 }
 
+.atoms-v2-preview-viewport {
+  min-block-size: 0;
+  flex: 1;
+  overflow: hidden;
+  background: white;
+}
+
 .atoms-v2-preview-frame {
-  inline-size: 100%;
-  block-size: calc(100% - 58px);
   border: 0;
   background: white;
+  transform-origin: top left;
 }
 
 .atoms-v2-viewer__form {
