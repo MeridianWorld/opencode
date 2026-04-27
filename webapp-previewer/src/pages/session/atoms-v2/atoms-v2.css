@@ -593,6 +593,13 @@
   grid-template-columns: minmax(0, 1fr) 230px;
 }
 
+.atoms-v2-preview-frame {
+  inline-size: 100%;
+  block-size: calc(100% - 58px);
+  border: 0;
+  background: white;
+}
+
 .atoms-v2-viewer__form {
   padding: 18px;
 }
@@ -823,6 +830,75 @@
   color: #23262d;
   font: 13px/1.75 "IBM Plex Mono", "Cascadia Code", monospace;
   white-space: pre-wrap;
+}
+
+.atoms-v2-files {
+  min-block-size: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--v2-line);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.68);
+  overflow: hidden;
+}
+
+.atoms-v2-files__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--v2-line);
+  color: #696258;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.atoms-v2-files__head strong {
+  color: var(--v2-ink);
+  text-transform: none;
+}
+
+.atoms-v2-files__list {
+  min-block-size: 0;
+  overflow: auto;
+  padding: 10px;
+}
+
+.atoms-v2-files__item {
+  display: grid;
+  grid-template-columns: 18px minmax(150px, 0.4fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  inline-size: 100%;
+  min-block-size: 38px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #504a42;
+  text-align: left;
+}
+
+.atoms-v2-files__item:hover {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.atoms-v2-files__item strong,
+.atoms-v2-files__item small {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.atoms-v2-files__item strong {
+  color: #1e2026;
+  font-size: 13px;
+}
+
+.atoms-v2-files__item small {
+  color: #8d867b;
+  font-size: 12px;
 }
 
 .atoms-v2-placeholder {

@@ -1,22 +1,40 @@
 import { createSignal } from "solid-js"
 import { editorRef, steps, viewerRef, type Scene, type Tab } from "./fixtures"
+import type { WorkspaceData } from "./workspace"
 
 export type Mode = "viewer" | "editor" | "files" | "inspect"
 
 const start = () => editorRef.tabs.map((item) => ({ ...item }))
 
-export function createAtomsV2Model() {
+type Source = {
+  data: () => WorkspaceData
+  load: (path: string) => void
+  toggle: (path: string) => void
+}
+
+export function createAtomsV2Model(source?: Source) {
   const [mode, setMode] = createSignal<Mode>("viewer")
   const [step, setStep] = createSignal("design")
-  const [tabs, setTabs] = createSignal<Tab[]>(start())
-  const [active, setActive] = createSignal(editorRef.tabs[0]?.id ?? "")
+  const [tabs, setTabs] = createSignal<Tab[]>(source ? [] : start())
+  const [active, setActive] = createSignal(source ? "" : (editorRef.tabs[0]?.id ?? ""))
   const [draft, setDraft] = createSignal("")
   const scene = (): Scene => (mode() === "viewer" ? viewerRef : editorRef)
+  const tree = () => source?.data().tree ?? scene().tree
+  const docs = () => source?.data().docs ?? scene().docs
+  const preview = () => source?.data().preview
+  const initial = () => source?.data().initial
+
+  const hit = (id: string) => {
+    const item = tree().find((next) => next.id === id)
+    if (item?.kind === "file") return { id, label: item.label }
+    return editorRef.tabs.find((next) => next.id === id) ?? { id, label: id }
+  }
 
   const open = (id: string) => {
-    if (!editorRef.docs[id]) return
-    const hit = editorRef.tabs.find((item) => item.id === id) ?? { id, label: id }
-    if (!tabs().some((item) => item.id === id)) setTabs([...tabs(), hit])
+    if (!docs()[id] && !tree().some((item) => item.id === id && item.kind === "file")) return
+    source?.load(id)
+    const item = hit(id)
+    if (!tabs().some((next) => next.id === id)) setTabs([...tabs(), item])
     setActive(id)
   }
 
@@ -50,11 +68,16 @@ export function createAtomsV2Model() {
     active,
     draft,
     scene,
+    tree,
+    docs,
+    preview,
+    initial,
     steps: () => steps,
     setMode: set,
     setStep,
     setActive,
     setDraft,
+    toggle: (path: string) => source?.toggle(path),
     open,
     close,
   }

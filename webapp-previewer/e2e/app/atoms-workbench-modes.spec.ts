@@ -1,9 +1,16 @@
 import { expect } from "@playwright/test"
+import fs from "node:fs/promises"
+import path from "node:path"
 import { test } from "../fixtures"
 
 test("atoms-v2 keeps one shell while switching viewer and editor modes", async ({ page, project }) => {
   await page.setViewportSize({ width: 1728, height: 1117 })
-  await project.open()
+  await project.open({
+    setup: async (dir) => {
+      await fs.writeFile(path.join(dir, "index.html"), "<h1>Mode Preview</h1>")
+      await fs.writeFile(path.join(dir, "styles.css"), "body { color: #123; }")
+    },
+  })
 
   const shell = page.locator('[data-component="atoms-v2-shell"]')
   const nav = page.locator(".atoms-v2-stage__nav")
@@ -14,7 +21,7 @@ test("atoms-v2 keeps one shell while switching viewer and editor modes", async (
   await nav.getByRole("button", { name: "Editor", exact: true }).click()
   await expect(editor).toBeVisible()
 
-  await editor.locator(".atoms-v2-editor__tabs").getByRole("button", { name: "styles.css", exact: true }).click()
+  await editor.locator(".atoms-v2-editor__tree").getByRole("button", { name: /styles\.css/ }).click()
   await page.getByRole("button", { name: "Close styles.css" }).click()
   await expect(editor.locator(".atoms-v2-editor__tabs").getByRole("button", { name: "styles.css", exact: true })).toHaveCount(0)
 
@@ -37,4 +44,24 @@ test("atoms-v2 gives the composer text layer proper inset", async ({ page, proje
   expect(await input.evaluate((node) => getComputedStyle(node).paddingTop)).toBe("16px")
   expect(await hint.evaluate((node) => getComputedStyle(node).paddingLeft)).toBe("20px")
   expect(await hint.evaluate((node) => getComputedStyle(node).paddingTop)).toBe("16px")
+})
+
+test("atoms-v2 loads workspace files through the official backend", async ({ page, project }) => {
+  await page.setViewportSize({ width: 1728, height: 1117 })
+  await project.open({
+    setup: async (dir) => {
+      await fs.writeFile(path.join(dir, "index.html"), "<h1>Backend Preview</h1>")
+      await fs.writeFile(path.join(dir, "app.js"), "console.log('backend-app')")
+    },
+  })
+
+  await expect(page.frameLocator(".atoms-v2-preview-frame").getByRole("heading", { name: "Backend Preview" })).toBeVisible()
+
+  const nav = page.locator(".atoms-v2-stage__nav")
+  await nav.getByRole("button", { name: "Editor", exact: true }).click()
+
+  const editor = page.locator('[data-component="atoms-v2-editor"]')
+  await expect(editor.locator(".atoms-v2-editor__tree").getByRole("button", { name: /index\.html/ })).toBeVisible()
+  await editor.locator(".atoms-v2-editor__tree").getByRole("button", { name: /app\.js/ }).click()
+  await expect(editor.locator(".atoms-v2-editor__code")).toContainText("backend-app")
 })

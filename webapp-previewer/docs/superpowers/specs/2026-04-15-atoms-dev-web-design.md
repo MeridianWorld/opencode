@@ -2754,3 +2754,46 @@ Action taken:
 Verification:
 - backend is listening at `http://127.0.0.1:4096`
 - frontend is listening at `http://localhost:5173`
+
+### 2026-04-27 Record 62
+New implementation request from the user:
+- The user approved the current front-end direction and asked me to connect the Atoms workbench to the backend.
+
+My understanding:
+- keep the Atoms visual shell
+- keep using the official OpenCode backend and official front-end contexts
+- replace the remaining static workspace fixtures with real project data where possible
+- first backend-connected slice should make the workspace useful immediately:
+  - Files shows real project files
+  - Editor opens real files through the official backend
+  - App Viewer renders a real HTML file when the project contains one
+
+Design decision:
+- reuse the existing `useFile` context instead of adding a separate fetch layer
+- `useFile` already calls:
+  - `sdk.client.file.list`
+  - `sdk.client.file.read`
+- add a thin `atoms-v2/workspace.ts` adapter that translates backend `FileNode` and `FileContent` into the Atoms workbench model
+- keep the shared `PromptInput` unchanged so the chat submission path remains official
+
+Implementation notes:
+- `src/pages/session.tsx` now builds a reactive workspace source from `useFile`
+- `createAtomsV2Model` now accepts an optional backend workspace source
+- `AtomsV2Editor` now reads the live tree/docs from the model
+- `AtomsV2Files` was added as the real Files mode surface
+- `AtomsV2Viewer` now renders an `iframe srcdoc` preview when a text/html file is available
+
+Errors found and resolved:
+- The first Playwright migration failed because the old mode-switching test assumed fixture tabs such as `styles.css` always existed.
+- After backend connection, editor tabs are created by opening real files from the file tree.
+- Resolution:
+  - update the test project setup to create real `index.html`, `styles.css`, and `app.js` files
+  - update the test flow to click `styles.css` from the real file tree before closing its tab
+- Typecheck also caught the recursive file tree collector in `session.tsx` as needing an explicit `FileNode[]` return type.
+- Resolution:
+  - add the explicit return type to the local recursive `visit` function
+
+Verification run for this feature:
+- `bun test --preload ./happydom.ts ./src/pages/session/atoms-v2/workspace.test.ts ./src/pages/session/atoms-v2/state.test.ts ./src/pages/session/atoms-v2/editor.test.tsx`
+- `bun typecheck`
+- `bun x playwright test e2e/app/atoms-workbench-shell.spec.ts e2e/app/atoms-workbench-modes.spec.ts --workers=1 --reporter=line`

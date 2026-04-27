@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test"
 import { createAtomsV2Model } from "./state"
+import type { WorkspaceData } from "./workspace"
 
 describe("createAtomsV2Model", () => {
   it("switches between viewer and editor scenes", () => {
@@ -35,5 +36,26 @@ describe("createAtomsV2Model", () => {
 
     expect(ui.tabs().some((item) => item.id === "SPEC.md")).toBe(true)
     expect(ui.active()).toBe("SPEC.md")
+  })
+
+  it("opens a file from the backend workspace source", () => {
+    const loaded: string[] = []
+    const data: WorkspaceData = {
+      tree: [{ id: "index.html", label: "index.html", kind: "file", depth: 0 }],
+      docs: {},
+      initial: "index.html",
+      preview: undefined,
+    }
+    const ui = createAtomsV2Model({
+      data: () => data,
+      load: (path) => loaded.push(path),
+      toggle: () => {},
+    })
+
+    ui.open("index.html")
+
+    expect(loaded).toEqual(["index.html"])
+    expect(ui.tabs()).toEqual([{ id: "index.html", label: "index.html" }])
+    expect(ui.active()).toBe("index.html")
   })
 })

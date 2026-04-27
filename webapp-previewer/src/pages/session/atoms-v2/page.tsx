@@ -3,6 +3,7 @@ import { Match, Switch, type JSX } from "solid-js"
 import type { AtomsV2Model, Mode } from "./state"
 import { AtomsV2Conversation } from "./conversation"
 import { AtomsV2Editor } from "./editor"
+import { AtomsV2Files } from "./files"
 import { AtomsV2Toolbar } from "./toolbar"
 import { AtomsV2Viewer } from "./viewer"
 
@@ -65,16 +66,13 @@ export function AtomsV2Page(props: { ui: AtomsV2Model; title: string; composer: 
           <div class="atoms-v2-stage__body">
             <Switch>
               <Match when={props.ui.mode() === "viewer"}>
-                <AtomsV2Viewer scene={props.ui.scene()} />
+                <AtomsV2Viewer scene={props.ui.scene()} preview={props.ui.preview()} />
               </Match>
               <Match when={props.ui.mode() === "editor"}>
                 <AtomsV2Editor ui={props.ui} />
               </Match>
               <Match when={props.ui.mode() === "files"}>
-                <Placeholder
-                  title="Workspace files"
-                  text="The files state stays inside the same shell and keeps the document surface ready for the next iteration."
-                />
+                <AtomsV2Files ui={props.ui} />
               </Match>
               <Match when={props.ui.mode() === "inspect"}>
                 <Placeholder

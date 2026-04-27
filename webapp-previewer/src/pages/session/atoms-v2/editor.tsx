@@ -2,20 +2,20 @@ import { For, Show } from "solid-js"
 import type { AtomsV2Model } from "./state"
 
 export function AtomsV2Editor(props: { ui: AtomsV2Model }) {
-  const text = () => props.ui.scene().docs[props.ui.active()] ?? ""
+  const text = () => props.ui.docs()[props.ui.active()] ?? ""
 
   return (
     <section data-component="atoms-v2-editor" class="atoms-v2-editor">
       <aside class="atoms-v2-editor__tree">
         <div class="atoms-v2-editor__eyebrow">File tree</div>
-        <For each={props.ui.scene().tree}>
+        <For each={props.ui.tree()}>
           {(item) => (
             <button
               classList={{ "atoms-v2-editor__node": true, "is-file": item.kind === "file" }}
               style={{ "padding-left": `${18 + item.depth * 16}px` }}
-              onClick={() => item.kind === "file" && props.ui.open(item.id)}
+              onClick={() => (item.kind === "file" ? props.ui.open(item.id) : props.ui.toggle(item.id))}
             >
-              <span>{item.kind === "folder" ? ">" : "·"}</span>
+              <span>{item.kind === "folder" ? ">" : "."}</span>
               <span>{item.label}</span>
             </button>
           )}
