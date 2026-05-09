@@ -3214,3 +3214,60 @@ Sources checked:
   - `https://developer.mozilla.org/docs/Web/API/Window/showDirectoryPicker`
 - Chrome File System Access API guide:
   - `https://developer.chrome.com/articles/file-system-access`
+
+### 2026-05-09 Record 73
+New question from the user:
+- The user asked where an OpenCode-compatible backend can be hosted.
+
+Backend requirements:
+- Long-running HTTP/WebSocket/SSE service.
+- Real filesystem access for workspaces.
+- Persistent storage for projects, sessions, generated files, and user state.
+- Ability to run child processes/tools if we preserve OpenCode-like agent behavior.
+- Network access between the hosted frontend and backend.
+- Isolation if multiple users share the service.
+
+Unsuitable or limited target:
+- Vercel Functions / Edge are not the right primary backend target for a full OpenCode-compatible backend.
+- Vercel can host the frontend well.
+- It can also run request-based functions, but it is not a good fit for persistent workspace files and long-lived process execution.
+
+Good hosting options:
+- VPS or cloud VM:
+  - DigitalOcean Droplet, Hetzner, AWS EC2/Lightsail, GCP Compute Engine, Azure VM.
+  - Most direct fit because the backend gets a normal Linux filesystem and full process control.
+  - Recommended for the first real hosted backend because it is simplest to reason about.
+- Container platform with persistent volume:
+  - Fly.io Machines + Fly Volumes.
+  - Render Web Service + Persistent Disk.
+  - Railway service + Volume.
+  - Good fit if we want easier deploys than a raw VM while retaining mounted storage.
+- Kubernetes / ECS / Nomad:
+  - Strong for production scale and isolation.
+  - More operational complexity than needed for the first version.
+- Local backend bridge:
+  - User runs official OpenCode backend locally.
+  - Hosted frontend connects to local backend.
+  - Best fit when the workspace must stay on the user's machine.
+
+Recommendation:
+- For fastest reliable hosted backend:
+  - start with a single VPS or Fly.io Machine with a mounted persistent volume.
+  - expose HTTPS through Caddy/Nginx or the platform proxy.
+  - store each workspace under a dedicated data root such as `/var/opencode/workspaces/<user-or-session-id>`.
+- Keep Vercel as frontend hosting.
+- Add backend URL configuration in the frontend so it can point to:
+  - local backend for local-folder workflows
+  - hosted backend for hosted demo/sandbox workflows
+
+Sources checked:
+- Fly.io Volumes:
+  - `https://fly.io/docs/volumes/overview/`
+- Render Persistent Disks:
+  - `https://render.com/docs/disks`
+- Railway Volumes:
+  - `https://docs.railway.com/volumes`
+- DigitalOcean Block Storage:
+  - `https://docs.digitalocean.com/products/volumes/`
+- Vercel Functions limitations:
+  - `https://vercel.com/docs/functions/limitations/`
