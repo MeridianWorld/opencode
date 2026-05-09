@@ -3169,3 +3169,48 @@ Possible solutions:
 Decision pending:
 - Do not treat Vercel's filesystem as the user workspace.
 - Ask the user to confirm whether the immediate next implementation should be the recommended hosted demo workspace path.
+
+### 2026-05-09 Record 72
+New question from the user:
+- The user asked what happens if the hosted Vercel app connects to the user's local directory instead.
+
+Current understanding:
+- Browser pages cannot silently access arbitrary local folders.
+- A user can explicitly pick a local directory in browsers that support the File System Access API.
+- The relevant browser API is `window.showDirectoryPicker()`, which returns a `FileSystemDirectoryHandle` after user selection.
+- MDN describes the File System API / File System Access extensions as allowing read, write, and directory access to files on a user's local device or user-accessible network filesystem.
+- Chrome documentation also frames this as a user-mediated local file capability with permission and security controls.
+
+Important distinction:
+- A browser-selected local directory stays in the user's browser process.
+- Vercel does not receive a mounted filesystem path like `C:/...`.
+- The Vercel server cannot directly run the official OpenCode backend against that local folder.
+- If the frontend reads files through browser handles, backend calls that expect normal filesystem paths must be adapted or replaced.
+
+Feasible architectures:
+- Browser-local workspace:
+  - Use `showDirectoryPicker()` to let the user grant access to a folder.
+  - The frontend reads/writes files through `FileSystemDirectoryHandle`.
+  - Preview/editor can work client-side.
+  - Official OpenCode backend filesystem APIs cannot be used directly for that folder.
+- Local backend bridge:
+  - User runs official OpenCode backend locally.
+  - Hosted Vercel frontend connects to `http://localhost:4096` or a configured local endpoint.
+  - The backend operates on real local paths using the existing official OpenCode method.
+  - This is the closest match to the user's requirement of keeping official backend behavior.
+- Hybrid:
+  - Hosted frontend supports both:
+    - demo/browser-local workspace for visual preview
+    - local backend connection for real agent/file/session work
+
+Recommendation:
+- If the goal is real OpenCode behavior with local filesystem and backend calls, choose the local backend bridge.
+- If the goal is just a hosted web demo where users can inspect/edit files locally without installing backend, choose browser-local workspace, but accept that it is not the official backend path.
+
+Sources checked:
+- MDN File System API:
+  - `https://developer.mozilla.org/docs/Web/API/File_System_API`
+- MDN `showDirectoryPicker()`:
+  - `https://developer.mozilla.org/docs/Web/API/Window/showDirectoryPicker`
+- Chrome File System Access API guide:
+  - `https://developer.chrome.com/articles/file-system-access`
