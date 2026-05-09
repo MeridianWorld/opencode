@@ -1,4 +1,5 @@
-import { createEffect } from "solid-js"
+import { createEffect, createResource } from "solid-js"
+import { fetchDemoWorkspace } from "./session/atoms-v2/demo-api"
 import { demoWorkspace } from "./session/atoms-v2/demo-workspace"
 import { demo } from "./session/atoms-v2/fallback"
 import { AtomsV2Page } from "./session/atoms-v2/page"
@@ -12,15 +13,16 @@ function Composer() {
         +
       </button>
       <button type="button" aria-label="Send prompt">
-        ↑
+        ^
       </button>
     </div>
   )
 }
 
 export default function HostedDemo() {
+  const [data] = createResource(() => fetchDemoWorkspace().catch(() => demoWorkspace))
   const ui = createAtomsV2Model({
-    data: () => demoWorkspace,
+    data: () => data() ?? demoWorkspace,
     load: () => {},
     toggle: () => {},
   })

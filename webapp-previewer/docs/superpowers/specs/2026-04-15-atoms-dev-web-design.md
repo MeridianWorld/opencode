@@ -3428,3 +3428,30 @@ Decision:
   - local companion server: `http://localhost:4096`
   - hosted server: Fly.io, Render, Railway, VPS, or similar
   - future Vercel Sandbox bridge only if the product direction explicitly accepts sandbox session limits and cost/availability tradeoffs
+
+### 2026-05-10 Record 79
+New request from the user:
+- The user said a demo is fine and asked to put it on Vercel if possible.
+
+Understanding:
+- The immediate product goal is a public hosted demo that opens directly into the atoms-style workspace.
+- The demo should avoid the old OpenCode project picker and should not require a local folder.
+- The user is okay with demo behavior for now, as long as it can live on Vercel.
+
+Decision:
+- Implement a lightweight Vercel-hosted demo API instead of trying to run the full OpenCode-compatible backend in Vercel Functions.
+- The Vercel Function route is `/api/demo/workspace`.
+- The route returns the packaged virtual `demoWorkspace` JSON.
+- The hosted root page fetches that route first and falls back to the packaged static workspace if the API request fails.
+- This gives the production site a Vercel backend URL for the demo while preserving the later path to a real OpenCode-compatible backend.
+
+Implementation:
+- Added `webapp-previewer/api/demo/workspace.ts` as the Vercel Function endpoint.
+- Added `webapp-previewer/src/pages/session/atoms-v2/demo-api.ts` for shared demo API payload, parsing, and fetch logic.
+- Added `webapp-previewer/src/pages/session/atoms-v2/demo-api.test.ts` to cover the payload and fetch path.
+- Updated `webapp-previewer/src/pages/hosted-demo.tsx` so the root demo loads workspace data through the demo API before falling back locally.
+
+Limit:
+- This is not a full OpenCode backend.
+- It does not provide real filesystem writes, terminal execution, agent tools, or durable session process state.
+- It is a deployable product demo backend for previewer UI and static virtual workspace data.
