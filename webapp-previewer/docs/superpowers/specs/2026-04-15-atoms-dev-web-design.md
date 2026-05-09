@@ -3366,3 +3366,35 @@ Production verification:
 Result:
 - The hosted root path now opens the frontend-only atoms-style Demo workspace directly.
 - The old hosted project picker is no longer shown on production root.
+
+### 2026-05-09 Record 77
+New question from the user:
+- The user asked whether the current hosted page is pure frontend.
+- The user asked whether the backend cannot be used at all.
+- The user asked whether the official SDK can be used.
+
+Clarified understanding:
+- The current production root `/` is intentionally a frontend-only demo entry.
+- This was chosen as a short-term hosted demo so visitors immediately see the atoms workbench and previewer without choosing a local folder.
+- This does not mean the backend cannot be used.
+- It only means the current root demo does not call a backend because no hosted OpenCode-compatible backend is available yet.
+
+Technical clarification:
+- The official SDK is already part of the app stack.
+- `webapp-previewer/src/context/sdk.tsx` creates directory-scoped SDK clients through `useGlobalSDK`.
+- `webapp-previewer/src/utils/server.ts` calls `createOpencodeClient` from `@opencode-ai/sdk/v2/client` and points it at `server.url`.
+- The SDK is a browser/client-side API wrapper.
+- The SDK does not replace the OpenCode server.
+- A real OpenCode-compatible server is still required for:
+  - workspace filesystem access
+  - file listing and file reads
+  - sessions/messages/events
+  - agent/tool execution
+  - preview asset serving through backend viewer endpoints
+
+Decision:
+- Keep the root production page as a frontend-only demo until a backend URL exists.
+- For real backend mode, add a selectable or configured backend target:
+  - local OpenCode server, such as `http://localhost:4096`
+  - hosted OpenCode-compatible server, such as a VPS/Fly/Render/Railway service
+- Once such a backend URL is available, the atoms workbench can use the official SDK flow instead of the virtual demo workspace.
