@@ -3129,3 +3129,43 @@ Verification:
 Current state:
 - The old failed deployment still exists in Vercel history and will continue to show its historical errors if opened directly.
 - The active production alias now points to the new ready deployment.
+
+### 2026-05-09 Record 71
+New question from the user:
+- After deployment, the hosted site shows the OpenCode "No recent projects / Open project" screen.
+- The user asked how to solve the need to choose a working folder after deployment.
+- The user also asked whether this project can provide a directory on the Vercel server for users.
+
+Investigation:
+- The deployed root route is `/`, which maps to `HomeRoute`.
+- `HomeRoute` is the official OpenCode project-selection entrypoint, so a hosted empty browser profile naturally shows no recent local projects.
+- The Atoms-style workbench currently lives under the directory route:
+  - `/:dir/session/:id?`
+- `src/pages/session.tsx` can fall back to `VITE_OPENCODE_ATOMS_DEMO_DIR`, but that fallback only runs after the session route has been entered.
+- On Vercel, the current app is deployed as static frontend output, not as a long-running OpenCode backend with a persistent filesystem.
+
+Understanding:
+- The Vercel deployment cannot provide a normal persistent local working folder equivalent to a user's machine.
+- Vercel Serverless Functions can have bundled read-only files and temporary `/tmp` storage, but they are not a durable, user-owned workspace.
+- The official OpenCode backend expects a filesystem/worktree and long-lived local capabilities that do not map cleanly to a static Vercel frontend.
+- For a public hosted demo, the right abstraction is a demo/virtual workspace, not a real Vercel server directory.
+
+Possible solutions:
+- Recommended short-term solution:
+  - Make `/` on hosted Vercel enter an Atoms demo workspace automatically.
+  - Use a bundled/static demo project or virtual workspace data so users see the workbench immediately.
+  - Disable or clearly mark backend-dependent actions when no real OpenCode backend is connected.
+- Better product solution:
+  - Add two entry choices:
+    - `Open demo workspace`
+    - `Connect local OpenCode backend`
+  - The demo path proves the UI and previewer without requiring a local folder.
+  - The backend path is for real agent/session/file operations.
+- Full hosted solution:
+  - Keep Vercel as the frontend only.
+  - Run an OpenCode-compatible backend on a persistent container/VM platform with per-user sandbox directories and storage.
+  - This is required if users should create/edit files persistently in hosted workspaces.
+
+Decision pending:
+- Do not treat Vercel's filesystem as the user workspace.
+- Ask the user to confirm whether the immediate next implementation should be the recommended hosted demo workspace path.
