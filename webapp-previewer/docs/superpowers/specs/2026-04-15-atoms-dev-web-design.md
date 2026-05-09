@@ -3271,3 +3271,49 @@ Sources checked:
   - `https://docs.digitalocean.com/products/volumes/`
 - Vercel Functions limitations:
   - `https://vercel.com/docs/functions/limitations/`
+
+### 2026-05-09 Record 74
+New requirement from the user:
+- Short term, the hosted root path should enter a "Demo workspace" directly.
+- Users opening `webapp-previewer.vercel.app` should see the atoms-style workbench immediately.
+- The app should not ask the user to choose a local directory on the hosted root page.
+- This demo workspace should use static/virtual files bundled into the frontend.
+- The goal is to showcase the UI and previewer first, before a real cloud backend exists.
+
+Implementation understanding:
+- The root page is now a frontend-only demo entry.
+- It must not depend on OpenCode backend file APIs.
+- It must still reuse the atoms workbench components so later backend wiring remains compatible.
+- Existing non-root session routes can continue to use the OpenCode-compatible route/provider stack.
+
+Implementation choices:
+- Added a stable demo workspace identity: `Demo workspace`.
+- Added a bundled virtual workspace with:
+  - `index.html`
+  - `styles.css`
+  - `app.js`
+  - `README.md`
+- Added an inline HTML preview for `index.html` so the previewer works without backend asset rewriting.
+- Added a standalone hosted demo page for `/` that renders `AtomsV2Page` directly.
+- Bypassed `GlobalSyncProvider`, `SDKProvider`, and directory selection on `/`.
+- Kept the deeper OpenCode route shell available for non-root paths.
+
+Errors found and handled:
+- First browser check showed `/` redirected to the old `test-html` path because `VITE_OPENCODE_ATOMS_DEMO_DIR` was still influencing the demo directory.
+- Fix: `demo()` now returns the stable `Demo workspace` value and ignores that old environment variable.
+- Second browser check showed the UI shell loaded but the OpenCode global sync layer still made backend requests and emitted console errors.
+- Fix: the hosted root now renders standalone outside the OpenCode sync/app route shell.
+- The final browser check showed no console errors, no `Open project` button, and the iframe preview contained `EmailFlow`.
+
+Verification:
+- `bun test --preload ./happydom.ts ./src/pages/session/atoms-v2/fallback.test.ts ./src/pages/session/atoms-v2/state.test.ts ./src/pages/session/atoms-v2/workspace.test.ts`
+- `bun typecheck`
+- `bun test:e2e -- e2e/app/home.spec.ts`
+- `bun run build`
+- Local browser verification at `http://127.0.0.1:4173/`:
+  - URL remained `/`
+  - `atoms-v2-page` was visible
+  - `Demo workspace` was visible
+  - iframe `Preview index.html` contained `EmailFlow`
+  - `Open project` button count was `0`
+  - console error list was empty

@@ -43,13 +43,13 @@ import { ServerConnection, ServerProvider, serverName, useServer } from "@/conte
 import { SettingsProvider } from "@/context/settings"
 import { TerminalProvider } from "@/context/terminal"
 import DirectoryLayout from "@/pages/directory-layout"
+import HostedDemo from "@/pages/hosted-demo"
 import Layout from "@/pages/layout"
 import { handleNotificationClick } from "@/utils/notification-click"
 import { ErrorPage } from "./pages/error"
 import { useCheckServerHealth } from "./utils/server-health"
 import pkg from "../package.json"
 
-const HomeRoute = lazy(() => import("@/pages/home"))
 const loadSession = () => import("@/pages/session")
 const Session = lazy(loadSession)
 const Loading = () => <div class="size-full" />
@@ -378,7 +378,7 @@ export function AppInterface(props: {
                 component={props.router ?? Router}
                 root={(routerProps) => <RouterRoot appChildren={props.children}>{routerProps.children}</RouterRoot>}
               >
-                <Route path="/" component={HomeRoute} />
+                <Route path="/" component={HostedDemo} />
                 <Route path="/:dir" component={DirectoryLayout}>
                   <Route path="/" component={SessionIndexRoute} />
                   <Route path="/session/:id?" component={SessionRoute} />
@@ -394,6 +394,15 @@ export function AppInterface(props: {
 
 export default function App() {
   const server: ServerConnection.Http = { type: "http", http: { url: current() } }
+
+  if (location.pathname === "/")
+    return (
+      <PlatformProvider value={platform}>
+        <AppBaseProviders>
+          <HostedDemo />
+        </AppBaseProviders>
+      </PlatformProvider>
+    )
 
   return (
     <PlatformProvider value={platform}>

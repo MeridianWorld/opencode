@@ -1,14 +1,21 @@
 import { describe, expect, it } from "bun:test"
-import { pick } from "./fallback"
+import { demo, demoRoute, isDemo } from "./fallback"
+import { demoWorkspace } from "./demo-workspace"
 
 describe("atoms-v2 fallback workspace", () => {
-  it("uses the default demo workspace when no project directory is available", () => {
-    expect(pick({ project: undefined, fallback: "D:/github_repo/opencode/test-html" })).toBe(
-      "D:/github_repo/opencode/test-html",
-    )
+  it("uses a stable demo workspace for hosted entry", () => {
+    expect(demo()).toBe("Demo workspace")
+    expect(isDemo("Demo workspace")).toBe(true)
+    expect(demoRoute()).toContain("/session/demo")
   })
 
-  it("keeps an explicit project directory over the demo workspace", () => {
-    expect(pick({ project: "C:/work/app", fallback: "D:/github_repo/opencode/test-html" })).toBe("C:/work/app")
+  it("does not treat normal project directories as demo workspace", () => {
+    expect(isDemo("C:/work/app")).toBe(false)
+  })
+
+  it("ships virtual files with an html preview", () => {
+    expect(demoWorkspace.initial).toBe("index.html")
+    expect(demoWorkspace.docs["index.html"]).toContain("EmailFlow")
+    expect(demoWorkspace.preview?.html).toContain("EmailFlow")
   })
 })

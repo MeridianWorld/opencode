@@ -8,7 +8,8 @@ import { createEffect, createMemo } from "solid-js"
 import { createStore } from "solid-js/store"
 import { buildAtomsRows, reuseAtomsRows, type AtomsRow } from "./session/atoms/atoms-thread"
 import { useSessionLayout } from "./session/session-layout"
-import { demo, pick } from "./session/atoms-v2/fallback"
+import { demo, isDemo, pick } from "./session/atoms-v2/fallback"
+import { demoWorkspace } from "./session/atoms-v2/demo-workspace"
 import { AtomsV2Page } from "./session/atoms-v2/page"
 import { createAtomsV2Model } from "./session/atoms-v2/state"
 import { createWorkspaceData, rewriteHtml } from "./session/atoms-v2/workspace"
@@ -19,8 +20,9 @@ export default function Page() {
   const file = useFile()
   const route = useSessionLayout()
   const source = createMemo(() => sdk.directory)
-  const fallback = createMemo(() => sync.ready && !source())
-  const dir = createMemo(() => pick({ project: source(), fallback: demo() }))
+  const hosted = createMemo(() => isDemo(source()))
+  const fallback = createMemo(() => !hosted() && sync.ready && !source())
+  const dir = createMemo(() => (hosted() ? demo() : pick({ project: source(), fallback: demo() })))
   const title = createMemo(() => getFilename(dir()))
   const [state, setState] = createStore({
     children: {} as Record<string, FileNode[] | undefined>,
@@ -89,8 +91,9 @@ export default function Page() {
     void list(path)
   }
 
-  const data = createMemo(() =>
-    createWorkspaceData({
+  const data = createMemo(() => {
+    if (hosted()) return demoWorkspace
+    return createWorkspaceData({
       nodes: nodes(),
       content: (path) => (fallback() ? state.content[path] : file.get(path)?.content),
       html: (path, content) =>
@@ -100,14 +103,15 @@ export default function Page() {
           directory: dir(),
           path,
         }),
-    }),
-  )
+    })
+  })
   const ui = createAtomsV2Model({
     data,
     load,
     toggle,
   })
   const rows = createMemo((prev: AtomsRow[] = []) => {
+    if (hosted()) return []
     const id = route.params.id
     if (!id) return []
     return reuseAtomsRows(
@@ -123,12 +127,14 @@ export default function Page() {
   })
 
   createEffect(() => {
+    if (hosted()) return
     const id = route.params.id
     if (!id) return
     void sync.session.sync(id)
   })
 
   createEffect(() => {
+    if (hosted()) return
     if (fallback()) {
       void list("")
       return
