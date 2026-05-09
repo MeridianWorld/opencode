@@ -1,4 +1,4 @@
-import { payload } from "../../src/pages/session/atoms-v2/demo-api"
+import { payload } from "../../src/pages/session/atoms-v2/demo-api.js"
 
 type Req = {
   method?: string

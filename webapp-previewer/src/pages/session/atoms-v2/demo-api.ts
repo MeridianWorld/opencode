@@ -1,4 +1,4 @@
-import { demoWorkspace } from "./demo-workspace"
+import { demoWorkspace } from "./demo-workspace.js"
 import type { WorkspaceData } from "./workspace"
 
 export const api = "/api/demo/workspace"

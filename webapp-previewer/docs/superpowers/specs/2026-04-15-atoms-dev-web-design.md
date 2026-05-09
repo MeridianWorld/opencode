@@ -3455,3 +3455,26 @@ Limit:
 - This is not a full OpenCode backend.
 - It does not provide real filesystem writes, terminal execution, agent tools, or durable session process state.
 - It is a deployable product demo backend for previewer UI and static virtual workspace data.
+
+### 2026-05-10 Record 80
+Deployment error found after Record 79:
+- Production deployment `dpl_BfRfTaSpChCRHKq8rLewnXRGmQDv` was ready and aliased to `https://webapp-previewer.vercel.app`.
+- Directly requesting `https://webapp-previewer.vercel.app/api/demo/workspace` returned `FUNCTION_INVOCATION_FAILED`.
+
+Evidence:
+- `vercel inspect` showed the function existed as `api/demo/workspace`.
+- Vercel logs showed:
+  - `Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/var/task/src/pages/session/atoms-v2/demo-api' imported from /var/task/api/demo/workspace.js`
+- A local Node import of `.vercel/output/functions/api/demo/workspace.func/api/demo/workspace.js` reproduced the same missing-module error.
+
+Understanding:
+- Vercel compiled the TypeScript function to Node ESM.
+- Node ESM does not resolve extensionless relative imports at runtime.
+- The function import chain used extensionless paths:
+  - `../../src/pages/session/atoms-v2/demo-api`
+  - `./demo-workspace`
+
+Fix:
+- Changed the function runtime import to `../../src/pages/session/atoms-v2/demo-api.js`.
+- Changed the demo API runtime import to `./demo-workspace.js`.
+- This keeps browser bundling behavior intact while making the Vercel Function import graph valid for Node ESM.
