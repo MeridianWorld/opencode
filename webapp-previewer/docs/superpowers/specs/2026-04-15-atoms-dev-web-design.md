@@ -3398,3 +3398,33 @@ Decision:
   - local OpenCode server, such as `http://localhost:4096`
   - hosted OpenCode-compatible server, such as a VPS/Fly/Render/Railway service
 - Once such a backend URL is available, the atoms workbench can use the official SDK flow instead of the virtual demo workspace.
+
+### 2026-05-09 Record 78
+New question from the user:
+- The user asked whether the backend URL can be placed on Vercel.
+
+Clarified answer:
+- Yes, Vercel can store and serve the backend URL as frontend/runtime configuration.
+- For example, the Vercel project can have an environment variable such as `VITE_OPENCODE_SERVER_URL=https://backend.example.com`.
+- The browser app can then pass that URL to the official OpenCode SDK as `baseUrl`.
+- This is different from running the full OpenCode-compatible backend inside Vercel Functions.
+
+Architecture clarification:
+- Good fit for Vercel:
+  - host the frontend
+  - store backend URL configuration
+  - optionally provide a lightweight API route/proxy for simple HTTP forwarding
+- Not a good fit for Vercel Functions as the primary OpenCode backend:
+  - persistent workspace filesystem
+  - long-running agent/tool processes
+  - durable session process state
+  - terminal-like command execution
+  - full local workspace semantics
+
+Decision:
+- Add backend URL configuration to the frontend when implementing real backend mode.
+- Keep the actual OpenCode-compatible server on a runtime designed for long-running processes and filesystem access.
+- Possible backend URL targets:
+  - local companion server: `http://localhost:4096`
+  - hosted server: Fly.io, Render, Railway, VPS, or similar
+  - future Vercel Sandbox bridge only if the product direction explicitly accepts sandbox session limits and cost/availability tradeoffs
