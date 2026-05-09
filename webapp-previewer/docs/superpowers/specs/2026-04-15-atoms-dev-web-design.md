@@ -3478,3 +3478,28 @@ Fix:
 - Changed the function runtime import to `../../src/pages/session/atoms-v2/demo-api.js`.
 - Changed the demo API runtime import to `./demo-workspace.js`.
 - This keeps browser bundling behavior intact while making the Vercel Function import graph valid for Node ESM.
+
+### 2026-05-10 Record 81
+Final deployment after the ESM fix:
+- Deployed production build `dpl_FXRKvFg9UvgvXYVU5soA9bdRubkw`.
+- Production deployment URL: `https://webapp-previewer-ht740cq6b-qygemail-8402s-projects.vercel.app`
+- Production alias: `https://webapp-previewer.vercel.app`
+- Deployment state: `READY`
+
+Verification:
+- `https://webapp-previewer.vercel.app/api/demo/workspace` returned HTTP `200`.
+- The API response content type was `application/json; charset=utf-8`.
+- The API response contained `vercel-demo-api`.
+- The API response contained `EmailFlow`.
+- Vercel error logs for `dpl_FXRKvFg9UvgvXYVU5soA9bdRubkw` showed no errors.
+- Browser automation opened `https://webapp-previewer.vercel.app/`.
+- The page contained one `.atoms-v2-page`.
+- The page showed `Demo workspace` and `App Viewer`.
+- The old project picker text was absent.
+- The preview iframe contained `EmailFlow`.
+- Browser console errors were empty.
+
+Result:
+- The hosted root now opens the atoms-style Demo workspace directly.
+- The demo workspace data is served by the Vercel Function `/api/demo/workspace`.
+- The frontend still has a static fallback if that demo API ever fails.
