@@ -3317,3 +3317,26 @@ Verification:
   - iframe `Preview index.html` contained `EmailFlow`
   - `Open project` button count was `0`
   - console error list was empty
+
+### 2026-05-09 Record 75
+Deployment attempt after Record 74:
+- The feature commit `94ea9b538` was pushed to `origin/webapp-previewer`.
+- `vercel build --prod --yes --cwd webapp-previewer` succeeded locally.
+- `vercel deploy --prebuilt --prod --cwd webapp-previewer --archive=tgz --logs` failed before upload.
+
+Error found:
+- Vercel CLI returned: `The specified token is not valid. Use vercel login to generate a new token.`
+- The Vercel MCP connector also could not list deployments for the project because it returned `403 Forbidden`.
+- The connector error said it was not authorized for the `qygemail-8402s-projects` scope.
+
+Online verification:
+- Checked `https://webapp-previewer.vercel.app/` after the push.
+- The production site still showed the old project picker text:
+  - `No projects open`
+  - `Open a project to get started`
+- This means the root demo workspace has not reached production yet.
+
+Current blocker:
+- Production deployment needs Vercel re-authentication for the `qygemail-8402s-projects` scope.
+- After `vercel login` succeeds, rerun:
+  - `vercel deploy --prebuilt --prod --cwd webapp-previewer --archive=tgz --logs`
