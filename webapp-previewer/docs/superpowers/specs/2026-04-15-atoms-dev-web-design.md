@@ -3340,3 +3340,29 @@ Current blocker:
 - Production deployment needs Vercel re-authentication for the `qygemail-8402s-projects` scope.
 - After `vercel login` succeeds, rerun:
   - `vercel deploy --prebuilt --prod --cwd webapp-previewer --archive=tgz --logs`
+
+### 2026-05-09 Record 76
+New update from the user:
+- The user completed Vercel login and asked to continue.
+
+Deployment action:
+- Ran `vercel deploy --prebuilt --prod --cwd webapp-previewer --archive=tgz --logs`.
+- Deployment succeeded with:
+  - id: `dpl_32i2jGQtAMin25xetkb7HqAV52Y7`
+  - production URL: `https://webapp-previewer-h83mpyy07-qygemail-8402s-projects.vercel.app`
+  - production alias: `https://webapp-previewer.vercel.app`
+  - ready state: `READY`
+
+Production verification:
+- Opened `https://webapp-previewer.vercel.app/` with browser automation.
+- Verified:
+  - URL remained `/`
+  - `atoms-v2-page` count was `1`
+  - `Demo workspace` was visible
+  - iframe `Preview index.html` contained `EmailFlow`
+  - `Open project` button count was `0`
+  - console error list was empty
+
+Result:
+- The hosted root path now opens the frontend-only atoms-style Demo workspace directly.
+- The old hosted project picker is no longer shown on production root.
