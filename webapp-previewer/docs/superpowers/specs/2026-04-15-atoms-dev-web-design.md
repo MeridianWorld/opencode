@@ -3503,3 +3503,26 @@ Result:
 - The hosted root now opens the atoms-style Demo workspace directly.
 - The demo workspace data is served by the Vercel Function `/api/demo/workspace`.
 - The frontend still has a static fallback if that demo API ever fails.
+
+### 2026-05-10 Record 82
+New bug report from the user:
+- The user reported that the bottom composer still cannot type text.
+- The screenshot showed the atoms-style demo workspace and highlighted the composer area.
+
+Root cause:
+- `webapp-previewer/src/pages/hosted-demo.tsx` rendered the composer prompt as a static `<div class="atoms-v2-demo-composer__input">`.
+- The static `div` looked like an input but was not editable, focusable, or wired to state.
+- This was a frontend interaction bug in the hosted demo shell, not a backend issue and not a user operation issue.
+
+Decision:
+- Keep the current atoms-style visual shell.
+- Replace the fake input surface with a real `textarea` so users can focus, type, select, and edit text.
+- Keep this fix scoped to typing; real backend submission remains a later backend integration step.
+
+Implementation:
+- Exported `DemoComposer` from `webapp-previewer/src/pages/hosted-demo.tsx`.
+- Added local Solid state for prompt text.
+- Replaced the static prompt `div` with `<textarea aria-label="Prompt">`.
+- Kept the `+` and send controls in the same composer layout.
+- Updated `.atoms-v2-demo-composer__input` CSS so the textarea keeps the same soft atoms-style appearance.
+- Added `webapp-previewer/src/pages/hosted-demo.test.ts` to prevent the hosted demo from regressing back to a static fake input.

@@ -1044,7 +1044,7 @@
 
 .atoms-v2-demo-composer {
   display: grid;
-  grid-template-columns: auto 34px 34px;
+  grid-template-columns: minmax(0, 1fr) 34px 34px;
   align-items: center;
   gap: 8px;
   min-block-size: 76px;
@@ -1057,11 +1057,20 @@
 
 .atoms-v2-demo-composer__input {
   align-self: stretch;
-  display: flex;
-  align-items: flex-start;
+  min-inline-size: 0;
+  min-block-size: 52px;
   padding: 12px 14px;
+  border: 0;
+  background: transparent;
   color: #70695f;
+  outline: none;
   font-size: 14px;
+  line-height: 1.5;
+  resize: none;
+}
+
+.atoms-v2-demo-composer__input::placeholder {
+  color: #817a70;
 }
 
 .atoms-v2-demo-composer button {
