@@ -3526,3 +3526,39 @@ Implementation:
 - Kept the `+` and send controls in the same composer layout.
 - Updated `.atoms-v2-demo-composer__input` CSS so the textarea keeps the same soft atoms-style appearance.
 - Added `webapp-previewer/src/pages/hosted-demo.test.ts` to prevent the hosted demo from regressing back to a static fake input.
+
+### 2026-05-10 Record 83
+Verification and deployment for the composer typing fix:
+- Local test command passed:
+  - `bun test --preload ./happydom.ts ./src/pages/hosted-demo.test.ts ./src/pages/session/atoms-v2/demo-api.test.ts ./src/pages/session/atoms-v2/fallback.test.ts ./src/pages/session/atoms-v2/state.test.ts ./src/pages/session/atoms-v2/workspace.test.ts`
+  - Result: `13 pass`, `0 fail`
+- Local typecheck passed:
+  - `bun typecheck`
+- Local production build passed:
+  - `bun run build`
+- Local browser verification against `http://127.0.0.1:4174/` confirmed:
+  - `textarea[aria-label="Prompt"]` existed
+  - filling it with `Build a demo dashboard` updated the textarea value
+  - the textarea was not disabled
+  - the textarea was not read-only
+  - browser console errors were empty
+
+Production deployment:
+- Commit deployed: `dd707de34`
+- Vercel deployment id: `dpl_3Fy7rJ56wgGc16WW3t6fjzEXzbgV`
+- Production deployment URL: `https://webapp-previewer-mmf17zngc-qygemail-8402s-projects.vercel.app`
+- Production alias: `https://webapp-previewer.vercel.app`
+- Deployment state: `READY`
+
+Production verification:
+- `https://webapp-previewer.vercel.app/api/demo/workspace` returned HTTP `200`.
+- The demo API response still contained `vercel-demo-api` and `EmailFlow`.
+- Vercel error logs for the deployment showed no errors.
+- Browser automation opened `https://webapp-previewer.vercel.app/`.
+- `textarea[aria-label="Prompt"]` count was `1`.
+- Filling the textarea with `Build a demo dashboard` updated its value.
+- The textarea was not disabled and not read-only.
+- The page still showed `Demo workspace`.
+- The old project picker text was absent.
+- The preview iframe still contained `EmailFlow`.
+- Browser console errors were empty.
